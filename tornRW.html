@@ -1,0 +1,2421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torn Equipment Log Viewer</title>
+<style>
+:root{
+  --bg:#171610;
+  --panel:#201e16;
+  --panel2:#29261c;
+  --border:#4a4432;
+  --text:#e8e1ce;
+  --muted:#a9a08a;
+  --accent:#b49a63;
+  --accent2:#d0b87c;
+  --danger:#c77b6b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+main{max-width:1500px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:22px;margin:0 0 5px;font-weight:650}
+.sub{color:var(--muted);margin-bottom:20px}
+.controls{
+  display:flex;
+  gap:10px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  padding:14px;
+  border-radius:7px;
+}
+.key-controls{align-items:flex-start}
+.key-rows{display:grid;gap:8px;flex:1}
+.key-row{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) auto auto auto;
+  gap:8px;
+  align-items:center;
+}
+.key-status{
+  grid-column:1 / -1;
+  color:var(--muted);
+  font-size:12px;
+  min-height:18px;
+}
+.key-owner{
+  min-width:130px;
+  max-width:320px;
+  color:var(--muted);
+  font-size:13px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.add-key{
+  min-width:128px;
+  padding:9px 12px;
+}
+.remove-key-btn{
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+@media(max-width:700px){
+  .key-row{grid-template-columns:1fr auto}
+  .key-owner{grid-column:1 / -1}
+}
+input,button{
+  font:inherit;
+  border-radius:5px;
+  border:1px solid var(--border);
+}
+input{
+  width:100%;
+  padding:10px 11px;
+  color:var(--text);
+  background:#13120e;
+  outline:none;
+}
+input:focus{border-color:var(--accent)}
+button{
+  padding:9px 15px;
+  color:#171610;
+  background:var(--accent2);
+  cursor:pointer;
+  font-weight:650;
+}
+button:hover{background:#dec88f}
+button:disabled{opacity:.55;cursor:not-allowed}
+.status{
+  min-height:22px;
+  margin:12px 2px 4px;
+  color:var(--muted);
+}
+.status.error{color:var(--danger)}
+.tabs{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin:17px 0 0;
+  border-bottom:1px solid var(--border);
+}
+.tab{
+  color:var(--muted);
+  background:transparent;
+  border:0;
+  border-bottom:2px solid transparent;
+  border-radius:0;
+  padding:10px 12px;
+  font-weight:600;
+}
+.tab.active{color:var(--text);border-bottom-color:var(--accent2)}
+.tab:hover{background:var(--panel);color:var(--text)}
+.table-wrap{
+  overflow:auto;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-top:0;
+  min-height:180px;
+}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+th,td{
+  text-align:left;
+  padding:9px 10px;
+  border-bottom:1px solid #383426;
+  white-space:nowrap;
+}
+th{
+  position:sticky;top:0;
+  background:var(--panel2);
+  color:#cfc5ab;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--text)}
+th .sort-indicator{margin-left:5px;color:var(--accent2)}
+.filter-row th{
+  top:34px;
+  padding:5px 6px 7px;
+  background:#242117;
+}
+.filter-row input{
+  min-width:90px;
+  padding:6px 7px;
+  font-size:12px;
+  border-radius:3px;
+}
+tbody tr:hover{background:#262319}
+.history-group{
+  border-left:1px solid var(--border) !important;
+  border-right:1px solid var(--border) !important;
+  text-align:center;
+}
+#table tbody td.history-group{
+  border-left:1px solid var(--border) !important;
+  border-right:1px solid var(--border) !important;
+}
+th.history-group{
+  border-top:1px solid var(--border) !important;
+  border-bottom:1px solid var(--border) !important;
+}
+.history-group-start{border-left:3px solid var(--border) !important}
+.history-group-0{background:#2d291e}
+.history-group-1{background:#25231b}
+.history-detail-header{border-left:1px solid var(--border) !important}
+#table thead .history-subcell{
+  border-left:1px solid var(--border) !important;
+  border-right:1px solid var(--border) !important;
+  box-shadow:inset 1px 0 0 var(--border), inset -1px 0 0 var(--border);
+}
+#table thead .history-subcell.history-group-start{
+  border-left:3px solid var(--border) !important;
+  box-shadow:inset 2px 0 0 var(--border), inset -1px 0 0 var(--border);
+}
+.history-date-sortable{cursor:pointer;user-select:none}
+.history-date-sortable:hover{color:var(--text)}
+th[rowspan="2"]{vertical-align:middle}
+.empty{padding:30px;color:var(--muted);text-align:center}
+.count{color:var(--muted);font-weight:400;margin-left:5px}
+.table-actions{
+  display:flex;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:14px;
+  min-height:37px;
+  padding:6px 0;
+}
+.table-actions button{
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:6px 10px;
+  font-weight:600;
+}
+.row-action{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid var(--border);
+  padding:4px 8px;
+  font-weight:600;
+}
+.row-action:hover{color:var(--text);background:var(--panel2)}
+.history-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+.history-option input{width:auto}
+[data-th-sort]{cursor:pointer;user-select:none}
+[data-th-sort]:hover{color:var(--text)}
+.history-owner-cell{
+  background:#383326 !important;
+  color:var(--accent2);
+  font-weight:700;
+}
+.history-detail-label{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:2px;
+}
+.editable-price{
+  width:125px;
+  min-width:110px;
+  padding:6px 7px;
+  background:#17150f;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+tr.hidden-row{opacity:.58}
+tr.hidden-row td{background:#1c1a14}
+@media(max-width:700px){
+  .controls{grid-template-columns:1fr}
+  main{padding:18px 10px 35px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Torn Equipment Log Viewer</h1>
+  <div class="sub">Weapon and armor entries only. API key is stored locally in a browser cookie.</div>
+
+  <div class="controls key-controls">
+    <div class="key-control-main">
+      <div id="keyRows" class="key-rows"></div>
+      <a class="custom-key-link" href="https://www.torn.com/preferences.php#tab=api?step=addNewKey&user=basic,trade,trades,log&logIds=88,18,11,85,80,75&torn=itemdetails,items&title=TransactionKey" target="_blank" rel="noopener noreferrer">Create Custom Key</a>
+    </div>
+    <button id="addKeyBtn" class="add-key" type="button">Add another key</button>
+  </div>
+  <div id="status" class="status"></div>
+
+  <div id="tabs" class="tabs"></div>
+  <div id="tableActions" class="table-actions"></div>
+  <div class="table-wrap">
+    <table id="table">
+      <thead>
+        <tr id="headerRow">
+          <th class="sortable" data-field="timestamp">Date<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="name">Item<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="uid">Unique ID<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="price">Price<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="quality">Quality<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="armor">Armor<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="damage">Damage<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="accuracy">Accuracy<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus1">Bonus 1<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus1Value">Bonus 1 Value<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus2">Bonus 2<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus2Value">Bonus 2 Value<span class="sort-indicator"></span></th>
+          <th>Actions</th>
+        </tr>
+        <tr class="filter-row">
+          <th><input data-filter="timestamp"></th>
+          <th><input data-filter="name"></th>
+          <th><input data-filter="uid"></th>
+          <th><input data-filter="price"></th>
+          <th><input data-filter="quality"></th>
+          <th><input data-filter="armor"></th>
+          <th><input data-filter="damage"></th>
+          <th><input data-filter="accuracy"></th>
+          <th><input data-filter="bonus1"></th>
+          <th><input data-filter="bonus1Value"></th>
+          <th><input data-filter="bonus2"></th>
+          <th><input data-filter="bonus2Value"></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="empty" class="empty">Enter an API key and load data.</div>
+  </div>
+</main>
+
+<script>
+const API = "https://api.torn.com/v2/";
+
+const LOGS = [
+  { id: 2615, key: "caches", label: "Caches", thLabel: "Cache", partyLabel: null },
+  { id: 4320, key: "auctionWins", label: "Auction House Wins", thLabel: "AH Win", partyLabel: "Seller" },
+  { id: 1112, key: "imBuys", label: "IM Buys", thLabel: "IM Buy", partyLabel: "Seller" },
+  { id: 1225, key: "bazaarBuys", label: "Bazaar Buys", thLabel: "Bazaar Buy", partyLabel: "Seller" },
+  { id: null, key: "tradeBuys", label: "Trades (Buys)", thLabel: "Trade Buy", trade: true, partyLabel: "Seller" },
+  { id: 4322, key: "auction", label: "Auction House Sells", thLabel: "AH Sell", partyLabel: "Buyer" },
+  { id: 1113, key: "marketSells", label: "IM Sells", thLabel: "IM Sell", partyLabel: "Buyer" },
+  { id: 1226, key: "bazaarSells", label: "Bazaar Sells", thLabel: "Bazaar Sell", partyLabel: "Buyer" },
+  { id: null, key: "tradeSells", label: "Trades (Sells)", thLabel: "Trade Sell", trade: true, partyLabel: "Buyer" },
+  { id: 6728, key: "factionDeposit", label: "Armoury Deposits", thLabel: "Armoury Deposit", partyLabel: "Faction" },
+  { id: 6733, key: "factionGiven", label: "Armoury Returns", thLabel: "Armoury Return", partyLabel: "Sender / Faction" },
+  { id: 4102, key: "itemsSent", label: "Items Sent", thLabel: "Sent", partyLabel: "Receiver" },
+  { id: 4103, key: "itemsReceived", label: "Items Received", thLabel: "Received", partyLabel: "Sender" }
+];
+const SUMMARY_TAB = { key: "uniqueItems", label: "Transaction History" };
+
+const state = {
+  active: "uniqueItems",
+  rows: Object.fromEntries(LOGS.map(x => [x.key, []])),
+  equipmentIds: new Set(),
+  itemsById: new Map(),
+  sort: { field: "timestamp", dir: "desc" },
+  filters: {},
+  itemDetailsDebug: [],
+  hiddenRows: new Set(JSON.parse(localStorage.getItem("tornHiddenRows") || "[]")),
+  showHidden: false,
+  hideFactionHistory: false,
+  hideItemTransfersHistory: false,
+  transactionFilters: {},
+  transactionSort: { field: "firstLogTimestamp", dir: "desc" },
+  userNameCache: new Map(),
+  userNamePromises: new Map(),
+  loadedOwners: new Map(),
+  manualPrices: new Map(Object.entries(JSON.parse(localStorage.getItem("tornManualPrices") || "{}"))),
+  itemMarketValueCache: new Map(),
+  factionNameCache: new Map(),
+  factionNamePromises: new Map()
+};
+
+// Debug data is intentionally exposed in the browser console.
+// After loading, run `tornDebug` or e.g. `tornDebug.auction.rawLogs[0]`.
+window.tornDebug = { catalog: null };
+
+
+window.tornDebug = window.tornDebug || {};
+window.getInvalidItemUids = function() {
+  return state.itemDetailsDebug
+    .filter(x => x?.status === "invalid_uid")
+    .map(x => ({ uid: x.requestedUids?.[0] ?? null, error: x.error ?? "" }));
+};
+window.tornDebug.itemDetails = state.itemDetailsDebug;
+
+function findKeysDeep(obj, pattern, path="", out=[]) {
+  if (!obj || typeof obj !== "object") return out;
+  if (Array.isArray(obj)) {
+    obj.forEach((v,i) => findKeysDeep(v, pattern, `${path}[${i}]`, out));
+    return out;
+  }
+  for (const [k,v] of Object.entries(obj)) {
+    const p = path ? `${path}.${k}` : k;
+    if (pattern.test(k)) out.push({ path: p, value: v });
+    if (v && typeof v === "object") findKeysDeep(v, pattern, p, out);
+  }
+  return out;
+}
+
+window.inspectItemDetailColors = function() {
+  const hits = [];
+  for (const batch of state.itemDetailsDebug) {
+    for (const record of batch.normalized || []) {
+      const found = findKeysDeep(record, /(color|colour|rarity|tier)/i);
+      if (found.length) hits.push({ record, found });
+    }
+  }
+  console.table(hits.flatMap(x => x.found.map(f => ({ path: f.path, value: f.value }))));
+  return hits;
+};
+
+const CACHE_DB_NAME = "tornEquipmentViewer";
+const CACHE_DB_VERSION = 1;
+const CACHE_STORE = "owners";
+
+function openCacheDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(CACHE_STORE)) {
+        db.createObjectStore(CACHE_STORE, { keyPath: "ownerId" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getOwnerCache(ownerId) {
+  const db = await openCacheDb();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(CACHE_STORE, "readonly");
+      const req = tx.objectStore(CACHE_STORE).get(String(ownerId));
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function putOwnerCache(record) {
+  const db = await openCacheDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(CACHE_STORE, "readwrite");
+      tx.objectStore(CACHE_STORE).put(record);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+function maxTimestamp(rows) {
+  return (rows || []).reduce((m, r) => Math.max(m, Number(r?.timestamp || 0)), 0);
+}
+
+function mergeRowsByKey(existing, incoming) {
+  const map = new Map();
+  for (const row of [...(existing || []), ...(incoming || [])]) {
+    if (!row?.rowKey) continue;
+    map.set(row.rowKey, row);
+  }
+  return [...map.values()];
+}
+
+function getCookie(name) {
+  return document.cookie.split("; ").find(x => x.startsWith(name + "="))?.split("=").slice(1).join("=") || "";
+}
+function setCookie(name, value) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; max-age=31536000; path=/; SameSite=Lax`;
+}
+function status(msg, error=false) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = "status" + (error ? " error" : "");
+}
+function val(...xs) {
+  for (const x of xs) if (x !== undefined && x !== null && x !== "") return x;
+  return null;
+}
+function formatMoney(v) {
+  if (v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return String(v);
+  const rounded = Math.round(n);
+  return rounded < 0
+    ? "-$" + Math.abs(rounded).toLocaleString()
+    : "$" + rounded.toLocaleString();
+}
+function formatDate(ts) {
+  if (!ts) return "";
+  const n = Number(ts);
+  if (!Number.isFinite(n)) return String(ts);
+  return new Date(n * 1000).toLocaleString();
+}
+function flattenObjects(obj, out=[]) {
+  if (!obj || typeof obj !== "object") return out;
+  out.push(obj);
+  for (const v of Object.values(obj)) {
+    if (v && typeof v === "object") flattenObjects(v, out);
+  }
+  return out;
+}
+function firstDeep(obj, names) {
+  const lowered = new Set(names.map(x => x.toLowerCase()));
+  for (const o of flattenObjects(obj, [])) {
+    for (const [k,v] of Object.entries(o)) {
+      if (lowered.has(k.toLowerCase()) && (typeof v !== "object" || v === null)) return v;
+    }
+  }
+  return null;
+}
+function apiError(json, res) {
+  const e = json?.error;
+  if (e) return e.error || e.message || `API error ${e.code ?? ""}`.trim();
+  return `HTTP ${res.status}`;
+}
+const REQUEST_LIMIT = 60;
+const REQUEST_WINDOW_MS = 60_000;
+const RATE_LIMIT_RETRY_MS = 60_000;
+
+const keyRequestState = new Map();
+window.tornRequestDebug = keyRequestState;
+window.getTradeDebug = function() {
+  const owners = window.tornDebug?.owners || {};
+  return Object.fromEntries(
+    Object.entries(owners).map(([id, data]) => [id, data?.trades || null])
+  );
+};
+
+function getKeyRequestState(key) {
+  let s = keyRequestState.get(key);
+  if (!s) {
+    s = {
+      requestTimes: [],
+      consecutiveApiErrors: 0,
+      phase: "",
+      lastRequest: "",
+      keyRow: null
+    };
+    keyRequestState.set(key, s);
+  }
+  return s;
+}
+
+function setPerKeyStatus(key, message, isError=false) {
+  const s = getKeyRequestState(key);
+  const el = s.keyRow?.querySelector(".key-status");
+  if (!el) return;
+  el.textContent = message || "";
+  el.style.color = isError ? "var(--danger)" : "";
+}
+
+function setKeyPhase(key, phase) {
+  const s = getKeyRequestState(key);
+  s.phase = phase || "";
+  if (s.phase) setPerKeyStatus(key, s.phase);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waitForRequestSlot(key) {
+  const s = getKeyRequestState(key);
+
+  while (true) {
+    const now = Date.now();
+
+    while (s.requestTimes.length && now - s.requestTimes[0] >= REQUEST_WINDOW_MS) {
+      s.requestTimes.shift();
+    }
+
+    if (s.requestTimes.length < REQUEST_LIMIT) {
+      s.requestTimes.push(now);
+      return;
+    }
+
+    const waitMs = Math.max(1, REQUEST_WINDOW_MS - (now - s.requestTimes[0]) + 25);
+    const msg = `API pacing: waiting ${Math.ceil(waitMs / 1000)}s for this key's rolling request window...`;
+    status(msg);
+    setPerKeyStatus(key, msg);
+    await sleep(waitMs);
+  }
+}
+
+function isTooManyRequests(json, res, message) {
+  if (res?.status === 429) return true;
+
+  const errorText = String(
+    message ??
+    json?.error?.error ??
+    json?.error?.message ??
+    ""
+  ).toLowerCase();
+
+  return errorText.includes("too many requests");
+}
+
+async function apiFetch(url, key) {
+  const requestState = getKeyRequestState(key);
+
+  while (true) {
+    await waitForRequestSlot(key);
+
+    const requestPath = String(url);
+    const u = new URL(requestPath.replace(/^\/+/, ""), API);
+    u.searchParams.set("key", key);
+    requestState.lastRequest = requestPath;
+
+    let res;
+    let json;
+
+    try {
+      res = await fetch(u.toString());
+
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error(`Invalid API response (${res.status})`);
+      }
+
+      if (!res.ok || json?.error) {
+        throw new Error(apiError(json, res));
+      }
+
+      requestState.consecutiveApiErrors = 0;
+      return json;
+
+    } catch (err) {
+      requestState.consecutiveApiErrors += 1;
+
+      if (requestState.consecutiveApiErrors >= 3) {
+        throw new Error(
+          `${err?.message || String(err)} — request: ${requestState.lastRequest}` +
+          `${requestState.phase ? ` — phase: ${requestState.phase}` : ""}` +
+          ` — stopped after 3 consecutive API errors.`
+        );
+      }
+
+      if (isTooManyRequests(json, res, err?.message)) {
+        const msg =
+          `Too many requests. Waiting 60 seconds before retrying ` +
+          `(error ${requestState.consecutiveApiErrors}/3)...`;
+        status(msg, true);
+        setPerKeyStatus(key, msg, true);
+        await sleep(RATE_LIMIT_RETRY_MS);
+        continue;
+      }
+
+      throw new Error(
+        `${err?.message || String(err)} — request: ${requestState.lastRequest}` +
+        `${requestState.phase ? ` — phase: ${requestState.phase}` : ""}`
+      );
+    }
+  }
+}
+
+function normalizeBasicUser(json) {
+  const candidates = [
+    json?.profile,
+    json?.basic,
+    json?.user,
+    json?.data,
+    json
+  ].filter(x => x && typeof x === "object");
+
+  for (const obj of candidates) {
+    const id = val(obj?.id, obj?.player_id, obj?.playerId, obj?.user_id, obj?.userId);
+    const name = val(obj?.name, obj?.player_name, obj?.playerName, obj?.username);
+    if (id !== null || name !== null) {
+      return {
+        id: id !== null ? String(id) : null,
+        name: name !== null ? String(name) : null
+      };
+    }
+  }
+  return { id: null, name: null };
+}
+
+async function getFactionName(factionId, key) {
+  if (factionId === null || factionId === undefined || factionId === "" || Number(factionId) === 0) return null;
+  const id = String(factionId);
+  if (state.factionNameCache.has(id)) return state.factionNameCache.get(id);
+  if (state.factionNamePromises.has(id)) return state.factionNamePromises.get(id);
+
+  const promise = (async () => {
+    try {
+      const json = await apiFetch(`/faction/${encodeURIComponent(id)}/basic`, key);
+      const name = val(json?.basic?.name, json?.faction?.basic?.name, json?.name);
+      if (!name) throw new Error(`Could not resolve faction name for ID ${id}.`);
+      state.factionNameCache.set(id, String(name));
+      return String(name);
+    } finally {
+      state.factionNamePromises.delete(id);
+    }
+  })();
+
+  state.factionNamePromises.set(id, promise);
+  return promise;
+}
+
+async function getOwnerBasic(key) {
+  const json = await apiFetch("/user/basic", key);
+  const user = normalizeBasicUser(json);
+  if (!user.id || !user.name) {
+    throw new Error("Could not determine user ID/name from /user/basic.");
+  }
+  state.userNameCache.set(String(user.id), user.name);
+  return user;
+}
+
+async function getUserName(userId, key) {
+  if (userId === null || userId === undefined || userId === "" || Number(userId) === 0) return null;
+  const id = String(userId).trim();
+  if (!/^\d+$/.test(id)) {
+    throw new Error(`Invalid user ID extracted from log: ${id}`);
+  }
+
+  if (state.userNameCache.has(id)) return state.userNameCache.get(id);
+  if (state.userNamePromises.has(id)) return state.userNamePromises.get(id);
+
+  const promise = (async () => {
+    try {
+      const json = await apiFetch(`/user/${encodeURIComponent(id)}/basic`, key);
+      const user = normalizeBasicUser(json);
+      if (!user.name) {
+        throw new Error(`Could not resolve user name for ID ${id}.`);
+      }
+      state.userNameCache.set(id, user.name);
+      return user.name;
+    } finally {
+      state.userNamePromises.delete(id);
+    }
+  })();
+
+  state.userNamePromises.set(id, promise);
+  return promise;
+}
+
+async function resolvePeople(rows, key) {
+  const ids = new Set();
+  for (const row of rows) {
+    if (row.sellerId) ids.add(String(row.sellerId));
+    if (row.buyerId) ids.add(String(row.buyerId));
+    if (row.senderId) ids.add(String(row.senderId));
+    if (row.receiverId) ids.add(String(row.receiverId));
+  }
+
+  await Promise.all([...ids].map(id => getUserName(id, key)));
+
+  for (const row of rows) {
+    row.seller = row.sellerId ? (state.userNameCache.get(String(row.sellerId)) || String(row.sellerId)) : null;
+    row.buyer = row.buyerId ? (state.userNameCache.get(String(row.buyerId)) || String(row.buyerId)) : null;
+    row.sender = row.senderId ? (state.userNameCache.get(String(row.senderId)) || String(row.senderId)) : null;
+    row.receiver = row.receiverId ? (state.userNameCache.get(String(row.receiverId)) || String(row.receiverId)) : null;
+  }
+}
+
+
+/* Torn has used both `cat` and broader unfiltered item responses over time.
+   Try category calls first; if unavailable, fall back to /torn/items and filter locally. */
+async function getEquipmentCatalog(key) {
+  let all = [];
+  let categorySucceeded = false;
+
+  for (const category of ["Weapon", "Armor"]) {
+    try {
+      const j = await apiFetch(`/torn/items?cat=${encodeURIComponent(category)}`, key);
+      const arr = normalizeItemList(j);
+      if (arr.length) {
+        all.push(...arr);
+        categorySucceeded = true;
+      }
+    } catch (_) {}
+  }
+
+  if (!categorySucceeded) {
+    const j = await apiFetch("/torn/items", key);
+    all = normalizeItemList(j).filter(isWeaponOrArmor);
+  } else {
+    all = all.filter(isWeaponOrArmor);
+  }
+
+  const deduped = new Map();
+  for (const item of all) {
+    const id = Number(val(item.id, item.item_id, item.itemID));
+    if (Number.isFinite(id)) deduped.set(id, item);
+  }
+  return deduped;
+}
+function normalizeItemList(json) {
+  const root = val(json?.items, json?.data?.items, json);
+  if (Array.isArray(root)) return root;
+  if (root && typeof root === "object") {
+    return Object.entries(root).map(([id,v]) =>
+      v && typeof v === "object" ? {id: val(v.id, Number(id)), ...v} : null
+    ).filter(Boolean);
+  }
+  return [];
+}
+function isWeaponOrArmor(item) {
+  const bits = [
+    item?.type, item?.category, item?.sub_type, item?.subtype,
+    item?.item_type, item?.itemType
+  ].filter(Boolean).join(" ").toLowerCase();
+  return bits.includes("weapon") || bits.includes("armor") || bits.includes("armour");
+}
+
+async function getAllLogEntries(logId, key, fromTimestamp=null) {
+  let url = `/user/log?log=${logId}&limit=100&sort=desc`;
+  if (fromTimestamp) url += `&from=${encodeURIComponent(fromTimestamp)}`;
+
+  const result = [];
+  const seenUrls = new Set();
+
+  while (url && !seenUrls.has(url)) {
+    seenUrls.add(url);
+    const j = await apiFetch(url, key);
+
+    const batch = val(j?.log, j?.logs, j?.data?.log, j?.data?.logs, []);
+    if (Array.isArray(batch)) result.push(...batch);
+    else if (batch && typeof batch === "object") result.push(...Object.values(batch));
+
+    const prev = val(
+      j?._metadata?.links?.prev,
+      j?.metadata?.links?.prev,
+      j?._metadata?.prev,
+      j?.metadata?.prev,
+      j?.pagination?.prev,
+      j?.links?.prev
+    );
+    url = prev ? String(prev) : null;
+  }
+  return result;
+}
+
+async function getAllTrades(key, fromTimestamp=null) {
+  let url = "/user/trades?cat=finished&limit=100&sort=desc";
+  if (fromTimestamp) url += `&from=${encodeURIComponent(fromTimestamp)}`;
+
+  const result = [];
+  const seenUrls = new Set();
+
+  while (url && !seenUrls.has(url)) {
+    seenUrls.add(url);
+    const j = await apiFetch(url, key);
+    const batch = val(j?.trades, j?.data?.trades, []);
+    if (Array.isArray(batch)) result.push(...batch);
+
+    const prev = val(
+      j?._metadata?.links?.prev,
+      j?.metadata?.links?.prev,
+      j?._metadata?.prev,
+      j?.metadata?.prev,
+      j?.links?.prev
+    );
+    url = prev ? String(prev) : null;
+  }
+  return result;
+}
+
+async function getTradeDetails(tradeId, key) {
+  const j = await apiFetch(`/user/${encodeURIComponent(tradeId)}/trade`, key);
+  return val(j?.trade, j?.data?.trade, j);
+}
+
+const EXCLUDED_TRADE_DESCRIPTION = /^(?:plushie|flower|flushie|xanax|xanie|dp|dono)(?:s|es)?$/i;
+
+function shouldSkipTradeSummary(trade) {
+  return EXCLUDED_TRADE_DESCRIPTION.test(String(trade?.description ?? "").trim());
+}
+
+function normalizeTradeItems(trade) {
+  return Array.isArray(trade?.items) ? trade.items : [];
+}
+
+function tradeCounterparty(trade, ownerId) {
+  const owner = String(ownerId);
+  const user = trade?.user || {};
+  const trader = trade?.trader || {};
+
+  if (String(user?.id ?? "") === owner) {
+    return {
+      id: trader?.id !== undefined && trader?.id !== null ? String(trader.id) : null,
+      name: trader?.name ?? null
+    };
+  }
+
+  if (String(trader?.id ?? "") === owner) {
+    return {
+      id: user?.id !== undefined && user?.id !== null ? String(user.id) : null,
+      name: user?.name ?? null
+    };
+  }
+
+  return { id: null, name: null };
+}
+
+async function getItemMarketValues(itemIds, key) {
+  const ids = [...new Set(itemIds.map(Number).filter(Number.isFinite))];
+  const missing = ids.filter(id => !state.itemMarketValueCache.has(id));
+
+  for (let i = 0; i < missing.length; i += 25) {
+    const chunk = missing.slice(i, i + 25);
+    const j = await apiFetch(`/torn/${chunk.join(",")}/items`, key);
+    const items = normalizeItemList(j);
+
+    const returned = new Set();
+    for (const item of items) {
+      const id = Number(val(item?.id, item?.item_id, item?.itemID));
+      if (!Number.isFinite(id)) continue;
+      returned.add(id);
+      const market = val(item?.value?.market_price, item?.market_price, item?.marketPrice);
+      state.itemMarketValueCache.set(id, market === null ? null : Number(market));
+    }
+
+    for (const id of chunk) {
+      if (!returned.has(id)) state.itemMarketValueCache.set(id, null);
+    }
+  }
+
+  return new Map(ids.map(id => [id, state.itemMarketValueCache.get(id)]));
+}
+
+async function valueTradeSide(tradeItems, sideUserId, key) {
+  const sideId = String(sideUserId);
+  const side = tradeItems.filter(x => String(x?.user_id ?? x?.userId ?? "") === sideId);
+
+  if (!side.length) return null;
+
+  const itemIds = [];
+  for (const entry of side) {
+    if (String(entry?.type ?? "").toLowerCase() === "item") {
+      const id = Number(val(entry?.details?.id, entry?.details?.item_id, entry?.details?.itemId));
+      if (Number.isFinite(id)) itemIds.push(id);
+    }
+  }
+
+  const values = await getItemMarketValues(itemIds, key);
+  let total = 0;
+
+  for (const entry of side) {
+    const type = String(entry?.type ?? "").toLowerCase();
+    const details = entry?.details || {};
+
+    if (type === "money") {
+      const amount = Number(val(details?.amount, details?.value, 0));
+      if (Number.isFinite(amount)) total += amount;
+      continue;
+    }
+
+    if (type === "item") {
+      const id = Number(val(details?.id, details?.item_id, details?.itemId));
+      const amount = Number(val(details?.amount, details?.qty, details?.quantity, 1));
+      const market = values.get(id);
+
+      // An item was present but its market value could not be determined, so the
+      // complete trade-side value is unknown rather than zero.
+      if (!Number.isFinite(market) || !Number.isFinite(amount)) return null;
+      total += market * amount;
+    }
+  }
+
+  return total;
+}
+
+function detailToTradeRow(detail, trade, direction, owner, counterparty, price) {
+  const stats = detail?.stats || {};
+  const bonuses = Array.isArray(detail?.bonuses) ? detail.bonuses : [];
+  const uid = String(detail?.uid);
+  const timestamp = val(trade?.completed_at, trade?.timestamp);
+
+  return {
+    timestamp,
+    rowKey: `${owner.id}:trade:${trade?.id}:${uid}:${direction}`,
+    itemId: Number(val(detail?.id, detail?.item_id)),
+    uid,
+    qty: 1,
+    price,
+    senderId: direction === "buy" ? counterparty.id : null,
+    receiverId: direction === "sell" ? counterparty.id : null,
+    sender: direction === "buy" ? counterparty.name : null,
+    receiver: direction === "sell" ? counterparty.name : null,
+    party: counterparty.name,
+    from: direction === "buy" ? counterparty.name : owner.name,
+    to: direction === "buy" ? owner.name : counterparty.name,
+    owner: owner.name,
+    ownerId: String(owner.id),
+    name: detail?.name ?? "",
+    quality: val(stats?.quality),
+    armor: val(stats?.armor, stats?.armour),
+    damage: val(stats?.damage),
+    accuracy: val(stats?.accuracy),
+    bonus1: val(bonuses[0]?.title, bonuses[0]?.name),
+    bonus1Value: val(bonuses[0]?.value),
+    bonus2: val(bonuses[1]?.title, bonuses[1]?.name),
+    bonus2Value: val(bonuses[1]?.value),
+    rarity: val(detail?.rarity),
+    raw: trade
+  };
+}
+
+async function loadTradeRows(owner, key, ownerDebug, fromTimestamp=null) {
+  status(`${owner.name}: loading trades...`);
+  setKeyPhase(key, "trade list /user/trades");
+  const summaries = await getAllTrades(key, fromTimestamp);
+
+  const skippedByDescription = summaries.filter(shouldSkipTradeSummary);
+  const candidates = summaries.filter(t => !shouldSkipTradeSummary(t));
+
+  const buys = [];
+  const sells = [];
+
+  const tradeDebug = {
+    owner: { id: String(owner.id), name: owner.name },
+    category: "finished",
+    rawTradeCount: summaries.length,
+    rawTrades: summaries,
+    skippedByDescriptionCount: skippedByDescription.length,
+    skippedByDescription,
+    candidateCount: candidates.length,
+    inspectedCount: 0,
+    tradesWithUidItems: 0,
+    totalUidCandidates: 0,
+    itemDetailsResolved: 0,
+    rejectedMissingItemDetails: 0,
+    rejectedWhiteRarity: 0,
+    rejectedWrongType: 0,
+    rejectedNoCounterparty: 0,
+    acceptedBuys: 0,
+    acceptedSells: 0,
+    details: [],
+    perTrade: []
+  };
+
+  for (let i = 0; i < candidates.length; i++) {
+    const summary = candidates[i];
+    status(`${owner.name}: inspecting trade ${i + 1}/${candidates.length}...`);
+
+    const debug = {
+      id: summary?.id ?? null,
+      description: summary?.description ?? "",
+      summary,
+      detail: null,
+      itemCount: 0,
+      uidCandidateCount: 0,
+      uidCandidates: [],
+      counterparty: null,
+      decisions: [],
+      result: "no matching equipment"
+    };
+    tradeDebug.perTrade.push(debug);
+
+    setKeyPhase(key, `trade ${summary.id} detail`);
+    const trade = await getTradeDetails(summary.id, key);
+    tradeDebug.inspectedCount += 1;
+    tradeDebug.details.push(trade);
+    debug.detail = trade;
+
+    const items = normalizeTradeItems(trade);
+    debug.itemCount = items.length;
+
+    const uniqueCandidates = items.filter(entry => {
+      if (String(entry?.type ?? "").toLowerCase() !== "item") return false;
+      const uid = val(entry?.details?.uid, entry?.details?.unique_id, entry?.details?.uniqueId);
+      return uid !== null && Number(uid) !== 0;
+    });
+
+    debug.uidCandidateCount = uniqueCandidates.length;
+    debug.uidCandidates = uniqueCandidates;
+    tradeDebug.totalUidCandidates += uniqueCandidates.length;
+
+    if (!uniqueCandidates.length) {
+      debug.result = "no item entries with UID";
+      continue;
+    }
+
+    tradeDebug.tradesWithUidItems += 1;
+
+    const uids = uniqueCandidates.map(x =>
+      String(val(x?.details?.uid, x?.details?.unique_id, x?.details?.uniqueId))
+    );
+
+    setKeyPhase(key, `trade ${summary.id} itemdetails`);
+    const detailMap = await getDetailsForUids(uids, key);
+    const counterparty = tradeCounterparty(trade, owner.id);
+    debug.counterparty = counterparty;
+
+    if (!counterparty?.id) {
+      tradeDebug.rejectedNoCounterparty += uniqueCandidates.length;
+    }
+
+    for (const entry of uniqueCandidates) {
+      const uid = String(val(entry?.details?.uid, entry?.details?.unique_id, entry?.details?.uniqueId));
+      const decision = {
+        uid,
+        entry,
+        itemDetail: null,
+        rarity: null,
+        type: null,
+        weaponSideId: String(entry?.user_id ?? entry?.userId ?? ""),
+        direction: null,
+        oppositeSideId: null,
+        price: null,
+        accepted: false,
+        reason: null
+      };
+      debug.decisions.push(decision);
+
+      const detail = detailMap.get(uid);
+      decision.itemDetail = detail || null;
+
+      if (!detail) {
+        tradeDebug.rejectedMissingItemDetails += 1;
+        decision.reason = "itemdetails missing/unresolvable";
+        continue;
+      }
+
+      tradeDebug.itemDetailsResolved += 1;
+
+      const rarity = String(detail?.rarity ?? "").toLowerCase();
+      const type = String(detail?.type ?? "").toLowerCase();
+      decision.rarity = rarity || null;
+      decision.type = type || null;
+
+      if (!["yellow", "orange", "red"].includes(rarity)) {
+        tradeDebug.rejectedWhiteRarity += 1;
+        decision.reason = `rarity rejected: ${rarity || "null"}`;
+        continue;
+      }
+
+      if (!(type.includes("weapon") || type.includes("armor") || type.includes("armour"))) {
+        tradeDebug.rejectedWrongType += 1;
+        decision.reason = `type rejected: ${type || "null"}`;
+        continue;
+      }
+
+      if (!counterparty?.id) {
+        decision.reason = "counterparty could not be resolved";
+        continue;
+      }
+
+      const weaponSideId = decision.weaponSideId;
+      const direction = weaponSideId === String(owner.id) ? "sell" : "buy";
+      const oppositeSideId = direction === "sell" ? counterparty.id : String(owner.id);
+
+      decision.direction = direction;
+      decision.oppositeSideId = oppositeSideId;
+
+      const price = oppositeSideId ? await valueTradeSide(items, oppositeSideId, key) : null;
+      decision.price = price;
+
+      const row = detailToTradeRow(detail, trade, direction, owner, counterparty, price);
+      decision.accepted = true;
+      decision.reason = "accepted";
+
+      if (direction === "sell") {
+        sells.push(row);
+        tradeDebug.acceptedSells += 1;
+      } else {
+        buys.push(row);
+        tradeDebug.acceptedBuys += 1;
+      }
+    }
+
+    const acceptedHere = debug.decisions.filter(x => x.accepted).length;
+    debug.result = acceptedHere
+      ? `${acceptedHere} accepted`
+      : "UID item(s) found, all rejected";
+  }
+
+  tradeDebug.buyRows = buys;
+  tradeDebug.sellRows = sells;
+  ownerDebug.trades = tradeDebug;
+
+  console.group(`[Torn trade debug] ${owner.name}`);
+  console.log("Summary:", {
+    rawTradeCount: tradeDebug.rawTradeCount,
+    skippedByDescriptionCount: tradeDebug.skippedByDescriptionCount,
+    candidateCount: tradeDebug.candidateCount,
+    inspectedCount: tradeDebug.inspectedCount,
+    tradesWithUidItems: tradeDebug.tradesWithUidItems,
+    totalUidCandidates: tradeDebug.totalUidCandidates,
+    itemDetailsResolved: tradeDebug.itemDetailsResolved,
+    rejectedMissingItemDetails: tradeDebug.rejectedMissingItemDetails,
+    rejectedWhiteRarity: tradeDebug.rejectedWhiteRarity,
+    rejectedWrongType: tradeDebug.rejectedWrongType,
+    rejectedNoCounterparty: tradeDebug.rejectedNoCounterparty,
+    acceptedBuys: tradeDebug.acceptedBuys,
+    acceptedSells: tradeDebug.acceptedSells
+  });
+  console.log("Per-trade decisions:", tradeDebug.perTrade);
+  console.log("Buy rows:", buys);
+  console.log("Sell rows:", sells);
+  console.groupEnd();
+
+  return { buys, sells };
+}
+function primitiveId(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+
+    // Sometimes Torn embeds a user object instead of a bare ID.
+    if (value && typeof value === "object") {
+      const nested = val(value?.id, value?.user_id, value?.userId, value?.player_id, value?.playerId);
+      if (nested !== null && (typeof nested === "number" || typeof nested === "string")) return nested;
+    }
+  }
+  return null;
+}
+
+function extractRowsFromLog(log, catalog, spec) {
+  const data = log?.data || {};
+
+  // Most relevant logs use data.items[].
+  // Auction house sold (4322) instead uses data.item[].
+  // Cache use (2615) also has data.item, but there it is a scalar cache ID,
+  // so only use data.item when it is actually an array.
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : (Array.isArray(data?.item) ? data.item : []);
+
+  return items.map((entry, entryIndex) => {
+    const itemId = Number(val(entry?.id, entry?.item_id, entry?.itemId));
+    const uidRaw = val(entry?.uid, entry?.unique_id, entry?.uniqueId);
+    const uid = uidRaw !== null && Number(uidRaw) !== 0 ? String(uidRaw) : null;
+    const catalogItem = Number.isFinite(itemId) ? catalog.get(itemId) : null;
+
+    const statsObj = val(entry?.stats, entry?.item_details?.stats, entry?.itemDetails?.stats, {});
+    const bonuses = val(entry?.bonuses, entry?.item_details?.bonuses, entry?.itemDetails?.bonuses, []);
+    const bonusArray = Array.isArray(bonuses) ? bonuses : [];
+    const b1 = bonusArray[0] || {};
+    const b2 = bonusArray[1] || {};
+
+    return {
+      timestamp: val(log?.timestamp, log?.time, log?.created_at),
+      rowKey: `${log?.id ?? log?.timestamp ?? "log"}:${entryIndex}:${uid ?? (Number.isFinite(itemId) ? itemId : "item")}`,
+      itemId: Number.isFinite(itemId) ? itemId : null,
+      uid,
+      qty: val(entry?.qty, entry?.quantity, 1),
+      price: val(
+        data?.final_price,
+        data?.cost_total,
+        data?.total_price,
+        data?.cost_each,
+        data?.price_each,
+        data?.unit_price
+      ),
+      sellerId: primitiveId(data?.seller, data?.owner),
+      buyerId: primitiveId(data?.buyer, data?.winner),
+      senderId: primitiveId(data?.sender, data?.sender_id, data?.user, data?.user_id),
+      receiverId: primitiveId(data?.receiver, data?.receiver_id, data?.recipient, data?.recipient_id),
+      factionId: primitiveId(data?.faction),
+      seller: null,
+      buyer: null,
+      sender: null,
+      receiver: null,
+      faction: null,
+      party: null,
+      from: null,
+      to: null,
+      owner: null,
+      ownerId: null,
+      name: val(entry?.name, catalogItem?.name, ""),
+      quality: val(statsObj?.quality, entry?.quality),
+      armor: val(statsObj?.armor, statsObj?.armour, entry?.armor, entry?.armour),
+      damage: val(statsObj?.damage, entry?.damage),
+      accuracy: val(statsObj?.accuracy, entry?.accuracy),
+      bonus1: val(b1?.title, b1?.name, entry?.bonus_1, entry?.bonus1),
+      bonus1Value: val(b1?.value, entry?.bonus_1_value, entry?.bonus1_value),
+      bonus2: val(b2?.title, b2?.name, entry?.bonus_2, entry?.bonus2),
+      bonus2Value: val(b2?.value, entry?.bonus_2_value, entry?.bonus2_value),
+      rarity: val(entry?.rarity, entry?.item_details?.rarity, entry?.itemDetails?.rarity),
+      raw: log
+    };
+  });
+}
+
+function needsDetails(r) {
+  return !!r.uid && [r.quality,r.armor,r.damage,r.accuracy,r.bonus1,r.bonus1Value,r.bonus2,r.bonus2Value]
+    .some(v => v === null || v === undefined);
+}
+function normalizeDetailResponse(j) {
+  const x = val(j?.itemdetails, j?.item_details, j?.items, j?.data, j);
+  if (Array.isArray(x)) return x;
+  if (x && typeof x === "object") {
+    if ("uid" in x || "stats" in x || "bonuses" in x) return [x];
+    return Object.values(x).filter(v => v && typeof v === "object");
+  }
+  return [];
+}
+async function getDetailsForUids(uids, key) {
+  const map = new Map();
+  const uniq = [...new Set(uids.filter(Boolean).map(String))];
+
+  async function fetchChunk(chunk) {
+    if (!chunk.length) return;
+
+    const ids = chunk.map(encodeURIComponent).join(",");
+
+    try {
+      const j = await apiFetch(`/torn/${ids}/itemdetails`, key);
+      const arr = normalizeDetailResponse(j);
+
+      state.itemDetailsDebug.push({
+        requestedUids: chunk.slice(),
+        raw: j,
+        normalized: arr,
+        status: "ok"
+      });
+
+      for (const d of arr) {
+        const uid = String(val(d?.uid, d?.item_details?.uid, d?.itemDetails?.uid, ""));
+        if (uid) map.set(uid, d);
+      }
+
+      // Compatibility with the current single-object response for one UID.
+      if (chunk.length === 1 && arr.length === 1 && !map.has(chunk[0])) {
+        map.set(chunk[0], arr[0]);
+      }
+
+      return;
+
+    } catch (err) {
+      const message = String(err?.message || err);
+
+      // A multi-UID itemdetails request fails as a whole if any one UID is
+      // invalid. Split the batch until the exact bad UID is isolated.
+      if (message.toLowerCase().includes("incorrect id")) {
+        if (chunk.length > 1) {
+          const mid = Math.ceil(chunk.length / 2);
+          await fetchChunk(chunk.slice(0, mid));
+          await fetchChunk(chunk.slice(mid));
+          return;
+        }
+
+        const badUid = chunk[0];
+
+        console.warn(
+          `[Torn itemdetails] Skipping invalid/unresolvable UID ${badUid}`,
+          { uid: badUid, error: message }
+        );
+
+        state.itemDetailsDebug.push({
+          requestedUids: [badUid],
+          raw: null,
+          normalized: [],
+          status: "invalid_uid",
+          error: message
+        });
+
+        // The UID itself is bad data from a historical log. Once isolated,
+        // don't let that single bad record abort the rest of the user's load.
+        const requestState = getKeyRequestState(key);
+        requestState.consecutiveApiErrors = 0;
+        return;
+      }
+
+      throw err;
+    }
+  }
+
+  for (let i = 0; i < uniq.length; i += 25) {
+    await fetchChunk(uniq.slice(i, i + 25));
+  }
+
+  return map;
+}
+function mergeDetails(row, d) {
+  if (!d) return row;
+  const detail = val(d?.item_details, d?.itemDetails, d);
+  const stats = val(detail?.stats, d?.stats, {});
+  const bonuses = val(detail?.bonuses, d?.bonuses, []);
+  const b = Array.isArray(bonuses) ? bonuses : [];
+  return {
+    ...row,
+    itemId: val(row.itemId, detail?.id, detail?.item_id, d?.item_id),
+    name: val(row.name, detail?.name, d?.name),
+    quality: val(row.quality, stats?.quality),
+    armor: val(row.armor, stats?.armor, stats?.armour),
+    damage: val(row.damage, stats?.damage),
+    accuracy: val(row.accuracy, stats?.accuracy),
+    bonus1: val(row.bonus1, b[0]?.title, b[0]?.name),
+    bonus1Value: val(row.bonus1Value, b[0]?.value),
+    bonus2: val(row.bonus2, b[1]?.title, b[1]?.name),
+    bonus2Value: val(row.bonus2Value, b[1]?.value),
+    rarity: val(row.rarity, detail?.rarity, d?.rarity)
+  };
+}
+function isEquipmentRow(row, catalog) {
+  return row.itemId !== null && catalog.has(Number(row.itemId));
+}
+
+async function finalizeRowFlow(rows, spec, owner, key) {
+  const factionIds = [...new Set(rows.map(r => r.factionId).filter(Boolean).map(String))];
+  await Promise.all(factionIds.map(id => getFactionName(id, key)));
+
+  for (const row of rows) {
+    row.faction = row.factionId ? state.factionNameCache.get(String(row.factionId)) || null : null;
+    const ownerName = owner.name;
+
+    switch (spec.key) {
+      case "caches":
+        row.party = null;
+        row.from = null;
+        row.to = ownerName;
+        break;
+      case "auctionWins":
+      case "imBuys":
+      case "bazaarBuys":
+        row.party = row.seller;
+        row.from = row.seller;
+        row.to = ownerName;
+        break;
+      case "auction":
+      case "marketSells":
+      case "bazaarSells":
+        row.party = row.buyer;
+        row.from = ownerName;
+        row.to = row.buyer;
+        break;
+      case "factionDeposit":
+        row.party = row.faction;
+        row.from = ownerName;
+        row.to = row.faction;
+        break;
+      case "factionGiven":
+        row.party = [row.sender, row.faction].filter(Boolean).join(" / ") || null;
+        row.from = row.party;
+        row.to = ownerName;
+        break;
+      case "itemsSent":
+        row.party = row.receiver;
+        row.from = ownerName;
+        row.to = row.receiver;
+        break;
+      case "itemsReceived":
+        row.party = row.sender;
+        row.from = row.sender;
+        row.to = ownerName;
+        break;
+    }
+  }
+}
+
+function summarizeLogShape(log) {
+  return {
+    logId: log?.details?.id ?? null,
+    title: log?.details?.title ?? null,
+    timestamp: log?.timestamp ?? null,
+    dataKeys: log?.data && typeof log.data === "object" ? Object.keys(log.data) : [],
+    paramsKeys: log?.params && typeof log.params === "object" ? Object.keys(log.params) : [],
+    dataItemsIsArray: Array.isArray(log?.data?.items),
+    dataItemIsArray: Array.isArray(log?.data?.item),
+    data: log?.data ?? null
+  };
+}
+function esc(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  return String(v).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function escInput(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+function buildUniqueItemsRows() {
+  const byUid = new Map();
+
+  for (const spec of LOGS) {
+    for (const row of state.rows[spec.key] || []) {
+      if (!row.uid || state.hiddenRows.has(row.rowKey)) continue;
+      if (state.hideFactionHistory && ["factionDeposit", "factionGiven"].includes(spec.key)) continue;
+      if (state.hideItemTransfersHistory && ["itemsReceived", "itemsSent"].includes(spec.key)) continue;
+
+      const key = String(row.uid);
+      let item = byUid.get(key);
+      if (!item) {
+        item = {
+          uid: key,
+          name: row.name,
+          owners: new Set(),
+          quality: row.quality,
+          armor: row.armor,
+          damage: row.damage,
+          accuracy: row.accuracy,
+          bonus1: row.bonus1,
+          bonus1Value: row.bonus1Value,
+          bonus2: row.bonus2,
+          bonus2Value: row.bonus2Value,
+          logs: []
+        };
+        byUid.set(key, item);
+      }
+
+      item.owners.add(row.owner);
+      item.logs.push({
+        type: spec.thLabel || spec.label,
+        sourceKey: spec.key,
+        timestamp: row.timestamp,
+        price: row.price,
+        from: row.from,
+        to: row.to,
+        owner: row.owner
+      });
+    }
+  }
+
+  for (const item of byUid.values()) {
+    item.logs.sort((a,b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
+    item.firstLogTimestamp = item.logs[0]?.timestamp ?? 0;
+    item.owner = [...item.owners].filter(Boolean).sort((a,b) => String(a).localeCompare(String(b))).join(", ");
+
+    const first = item.logs[0];
+    const last = item.logs[item.logs.length - 1];
+    const firstPrice = first?.price;
+    const lastPrice = last?.price;
+    item.profit =
+      firstPrice !== null && firstPrice !== undefined && firstPrice !== "" &&
+      lastPrice !== null && lastPrice !== undefined && lastPrice !== ""
+        ? Number(lastPrice) - Number(firstPrice)
+        : null;
+  }
+
+  return [...byUid.values()].sort((a,b) =>
+    Number(a.firstLogTimestamp || 0) - Number(b.firstLogTimestamp || 0) ||
+    String(a.name || "").localeCompare(String(b.name || ""), undefined, {numeric:true, sensitivity:"base"}) ||
+    String(a.uid).localeCompare(String(b.uid), undefined, {numeric:true})
+  );
+}
+
+function logHasPrice(key) {
+  return ["auction", "auctionWins", "imBuys", "marketSells", "bazaarSells", "bazaarBuys", "tradeBuys", "tradeSells", "itemsSent", "itemsReceived"].includes(key);
+}
+function logHasEditablePrice(key) {
+  return ["itemsSent", "itemsReceived"].includes(key);
+}
+function logPartyLabel(key) {
+  return LOGS.find(x => x.key === key)?.partyLabel || null;
+}
+
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  const allTabs = [
+    {...SUMMARY_TAB, count: buildUniqueItemsRows().length},
+    ...LOGS.map(x => ({...x, count: state.rows[x.key]?.length || 0}))
+  ];
+
+  tabs.innerHTML = allTabs.map(x => `
+    <button type="button" class="tab ${state.active===x.key?"active":""}" data-key="${x.key}">
+      ${esc(x.label)} <span class="count">${x.count}</span>
+    </button>
+  `).join("");
+
+  tabs.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => {
+    state.active = btn.dataset.key;
+    render();
+  }));
+}
+
+function displayValue(row, field) {
+  const raw = row[field];
+  if (field === "timestamp") return raw ? formatDate(raw) : "";
+  if (field === "price") return raw === null || raw === undefined || raw === "" ? "" : formatMoney(raw);
+  return raw === null || raw === undefined ? "" : raw;
+}
+function compareValues(a, b, field) {
+  const av = a[field];
+  const bv = b[field];
+
+  if (field === "timestamp") return Number(av || 0) - Number(bv || 0);
+
+  const an = Number(av), bn = Number(bv);
+  const aNum = av !== null && av !== "" && Number.isFinite(an);
+  const bNum = bv !== null && bv !== "" && Number.isFinite(bn);
+  if (aNum && bNum) return an - bn;
+
+  return String(av ?? "").localeCompare(String(bv ?? ""), undefined, {
+    numeric: true,
+    sensitivity: "base"
+  });
+}
+function getVisibleRows(rows) {
+  const filtered = rows.filter(row => {
+    if (state.hiddenRows.has(row.rowKey)) return false;
+    for (const [field, query] of Object.entries(state.filters)) {
+      if (!query) continue;
+      const hay = String(displayValue(row, field)).toLowerCase();
+      if (!hay.includes(query.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  const { field, dir } = state.sort;
+  return filtered.slice().sort((a,b) => {
+    const c = compareValues(a,b,field);
+    return dir === "asc" ? c : -c;
+  });
+}
+function updateSortIndicators() {
+  document.querySelectorAll("th.sortable").forEach(th => {
+    const span = th.querySelector(".sort-indicator");
+    span.textContent = th.dataset.field === state.sort.field
+      ? (state.sort.dir === "asc" ? "▲" : "▼")
+      : "";
+  });
+}
+function bindTableControls() {
+  document.querySelectorAll("th.sortable").forEach(th => {
+    th.addEventListener("click", () => {
+      const field = th.dataset.field;
+      if (state.sort.field === field) {
+        state.sort.dir = state.sort.dir === "asc" ? "desc" : "asc";
+      } else {
+        state.sort.field = field;
+        state.sort.dir = field === "timestamp" ? "desc" : "asc";
+      }
+      render();
+    });
+  });
+
+  document.querySelectorAll("[data-filter]").forEach(input => {
+    input.addEventListener("input", () => {
+      const field = input.dataset.filter;
+      const value = input.value;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      state.filters[field] = value;
+      render();
+
+      const replacement = document.querySelector(`[data-filter="${CSS.escape(field)}"]`);
+      if (replacement) {
+        replacement.focus();
+        try { replacement.setSelectionRange(start, end); } catch (_) {}
+      }
+    });
+  });
+}
+
+
+function buildNormalTableHead(showPrice, partyLabel) {
+  const priceHead = showPrice
+    ? `<th class="sortable" data-field="price">Price<span class="sort-indicator"></span></th>`
+    : "";
+  const priceFilter = showPrice
+    ? `<th><input data-filter="price"></th>`
+    : "";
+  const partyHead = partyLabel
+    ? `<th class="sortable" data-field="party">${escInput(partyLabel)}<span class="sort-indicator"></span></th>`
+    : "";
+  const partyFilter = partyLabel
+    ? `<th><input data-filter="party"></th>`
+    : "";
+
+  return `
+      <thead>
+        <tr id="headerRow">
+          <th class="sortable" data-field="timestamp">Date<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="name">Item<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="uid">Unique ID<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="owner">Owner<span class="sort-indicator"></span></th>
+          ${priceHead}
+          ${partyHead}
+          <th class="sortable" data-field="quality">Quality<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="armor">Armor<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="damage">Damage<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="accuracy">Accuracy<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus1">Bonus 1<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus1Value">Bonus 1 Value<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus2">Bonus 2<span class="sort-indicator"></span></th>
+          <th class="sortable" data-field="bonus2Value">Bonus 2 Value<span class="sort-indicator"></span></th>
+          <th>Actions</th>
+        </tr>
+        <tr class="filter-row">
+          <th><input data-filter="timestamp"></th>
+          <th><input data-filter="name"></th>
+          <th><input data-filter="uid"></th>
+          <th><input data-filter="owner"></th>
+          ${priceFilter}
+          ${partyFilter}
+          <th><input data-filter="quality"></th>
+          <th><input data-filter="armor"></th>
+          <th><input data-filter="damage"></th>
+          <th><input data-filter="accuracy"></th>
+          <th><input data-filter="bonus1"></th>
+          <th><input data-filter="bonus1Value"></th>
+          <th><input data-filter="bonus2"></th>
+          <th><input data-filter="bonus2Value"></th>
+          <th></th>
+        </tr>
+      </thead>`;
+}
+
+function parseEditablePrice(raw) {
+  const s = String(raw ?? "").trim().toLowerCase().replace(/,/g, "");
+  if (s === "") return null;
+
+  const match = s.match(/^(\d+(?:\.\d+)?)\s*([kmb])?$/i);
+  if (!match) return NaN;
+
+  const number = Number(match[1]);
+  if (!Number.isFinite(number)) return NaN;
+
+  const multiplier = {
+    k: 1_000,
+    m: 1_000_000,
+    b: 1_000_000_000
+  }[match[2]?.toLowerCase()] || 1;
+
+  return Math.round(number * multiplier);
+}
+
+function formatEditablePrice(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.round(n).toLocaleString() : "";
+}
+
+function saveManualPrices() {
+  localStorage.setItem("tornManualPrices", JSON.stringify(Object.fromEntries(state.manualPrices)));
+}
+
+function setManualPrice(rowKey, rawValue) {
+  const parsed = parseEditablePrice(rawValue);
+
+  if (parsed === null) {
+    state.manualPrices.delete(rowKey);
+  } else if (Number.isFinite(parsed)) {
+    state.manualPrices.set(rowKey, parsed);
+  } else {
+    return false;
+  }
+
+  saveManualPrices();
+
+  for (const spec of LOGS) {
+    const row = (state.rows[spec.key] || []).find(r => r.rowKey === rowKey);
+    if (row) {
+      row.price = state.manualPrices.has(rowKey) ? state.manualPrices.get(rowKey) : null;
+      break;
+    }
+  }
+
+  return true;
+}
+
+function saveHiddenRows() {
+  localStorage.setItem("tornHiddenRows", JSON.stringify([...state.hiddenRows]));
+}
+
+function setRowHidden(rowKey, hidden) {
+  if (hidden) state.hiddenRows.add(rowKey);
+  else state.hiddenRows.delete(rowKey);
+  saveHiddenRows();
+  render();
+}
+
+function sortRowsLikeCurrent(rows) {
+  const { field, dir } = state.sort;
+  return rows.slice().sort((a,b) => {
+    const c = compareValues(a,b,field);
+    return dir === "asc" ? c : -c;
+  });
+}
+
+function renderTableActions() {
+  const actions = document.getElementById("tableActions");
+  if (state.active === SUMMARY_TAB.key) {
+    actions.innerHTML = `
+      <label class="history-option">
+        <input type="checkbox" id="hideFactionHistory" ${state.hideFactionHistory ? "checked" : ""}>
+        Hide faction deposit/received transactions
+      </label>
+      <label class="history-option">
+        <input type="checkbox" id="hideItemTransfersHistory" ${state.hideItemTransfersHistory ? "checked" : ""}>
+        Hide item send/received transactions
+      </label>`;
+    document.getElementById("hideFactionHistory").addEventListener("change", e => {
+      state.hideFactionHistory = e.target.checked;
+      render();
+    });
+    document.getElementById("hideItemTransfersHistory").addEventListener("change", e => {
+      state.hideItemTransfersHistory = e.target.checked;
+      render();
+    });
+    return;
+  }
+
+  const hiddenCount = (state.rows[state.active] || [])
+    .filter(r => state.hiddenRows.has(r.rowKey)).length;
+
+  if (!hiddenCount) {
+    actions.innerHTML = "";
+    state.showHidden = false;
+    return;
+  }
+
+  actions.innerHTML = `<button type="button" id="toggleHiddenRows">
+    ${state.showHidden ? "Hide hidden rows" : `Show hidden rows (${hiddenCount})`}
+  </button>`;
+
+  document.getElementById("toggleHiddenRows").addEventListener("click", () => {
+    state.showHidden = !state.showHidden;
+    render();
+  });
+}
+
+function transactionFieldValue(row, field) {
+  const v = row[field];
+  return v === null || v === undefined ? "" : v;
+}
+
+function getFilteredTransactionRows(rows) {
+  const filtered = rows.filter(row => {
+    for (const [field, query] of Object.entries(state.transactionFilters)) {
+      if (!query) continue;
+      let value = transactionFieldValue(row, field);
+      if (field === "profit" && value !== null && value !== undefined && value !== "") {
+        value = formatMoney(value);
+      }
+      const hay = String(value ?? "").toLowerCase();
+      if (!hay.includes(String(query).toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  const { field, dir } = state.transactionSort;
+  return filtered.slice().sort((a,b) => {
+    const av = transactionFieldValue(a, field);
+    const bv = transactionFieldValue(b, field);
+
+    const numericFields = new Set([
+      "firstLogTimestamp","quality","armor","damage","accuracy",
+      "bonus1Value","bonus2Value","profit"
+    ]);
+
+    let c;
+    if (numericFields.has(field)) {
+      const an = Number(av), bn = Number(bv);
+      const aa = Number.isFinite(an) ? an : -Infinity;
+      const bb = Number.isFinite(bn) ? bn : -Infinity;
+      c = aa - bb;
+    } else {
+      c = String(av ?? "").localeCompare(String(bv ?? ""), undefined, {
+        numeric: true,
+        sensitivity: "base"
+      });
+    }
+    return dir === "asc" ? c : -c;
+  });
+}
+
+function transactionSortIndicator(field) {
+  return state.transactionSort.field === field
+    ? `<span class="sort-indicator">${state.transactionSort.dir === "asc" ? "▲" : "▼"}</span>`
+    : "";
+}
+
+function bindTransactionHistoryControls() {
+  document.querySelectorAll("[data-th-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const field = th.dataset.thSort;
+      if (state.transactionSort.field === field) {
+        state.transactionSort.dir = state.transactionSort.dir === "asc" ? "desc" : "asc";
+      } else {
+        state.transactionSort.field = field;
+        state.transactionSort.dir = "asc";
+      }
+      renderUniqueItemsTable();
+    });
+  });
+
+  document.querySelectorAll("[data-th-filter]").forEach(input => {
+    input.addEventListener("input", () => {
+      const field = input.dataset.thFilter;
+      const value = input.value;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      state.transactionFilters[field] = value;
+      renderUniqueItemsTable();
+
+      const replacement = document.querySelector(`[data-th-filter="${CSS.escape(field)}"]`);
+      if (replacement) {
+        replacement.focus();
+        try { replacement.setSelectionRange(start, end); } catch (_) {}
+      }
+    });
+  });
+}
+
+function renderUniqueItemsTable() {
+  let rows = getFilteredTransactionRows(buildUniqueItemsRows());
+  const table = document.getElementById("table");
+  const empty = document.getElementById("empty");
+
+  const maxLogs = rows.reduce((m,r) => Math.max(m, r.logs.length), 0);
+
+  const groupHeaders = Array.from({length:maxLogs}, (_,i) =>
+    `<th colspan="5" class="history-group history-group-${i%2}"></th>`
+  ).join("");
+
+  const subHeaders = Array.from({length:maxLogs}, (_,i) => {
+    const firstDateSort = i === 0
+      ? ` sortable" data-th-sort="firstLogTimestamp`
+      : "";
+    const dateIndicator = i === 0 ? transactionSortIndicator("firstLogTimestamp") : "";
+    return `<th class="history-group history-group-${i%2} history-group-start history-subcell">Type</th>
+     <th class="history-group history-group-${i%2}${firstDateSort} history-subcell">Date${dateIndicator}</th>
+     <th class="history-group history-group-${i%2} history-subcell">Price</th>
+     <th class="history-group history-group-${i%2} history-subcell">From</th>
+     <th class="history-group history-group-${i%2} history-subcell">To</th>`;
+  }).join("");
+
+  const fixed = [
+    ["name", "Item"],
+    ["uid", "Unique ID"],
+    ["owner", "Owner"],
+    ["quality", "Quality"],
+    ["armor", "Armor"],
+    ["damage", "Damage"],
+    ["accuracy", "Accuracy"],
+    ["bonus1", "Bonus 1"],
+    ["bonus1Value", "Bonus 1 Value"],
+    ["bonus2", "Bonus 2"],
+    ["bonus2Value", "Bonus 2 Value"],
+    ["profit", "Profit"]
+  ];
+
+  const fixedHeaders = fixed.map(([field,label]) =>
+    `<th class="sortable" data-th-sort="${field}">
+      ${label}${transactionSortIndicator(field)}
+    </th>`
+  ).join("");
+
+  const fixedFilters = fixed.map(([field]) =>
+    `<th><input data-th-filter="${field}" value="${escInput(state.transactionFilters[field] || "")}"></th>`
+  ).join("");
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        ${fixedHeaders}
+        ${groupHeaders}
+      </tr>
+      <tr class="filter-row">
+        ${fixedFilters}
+        ${subHeaders}
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map(r => {
+        const history = Array.from({length:maxLogs}, (_,i) => {
+          const h = r.logs[i];
+          const cls = `history-group-${i%2}`;
+          if (!h) return `<td class="${cls} history-group-start">—</td><td class="${cls}">—</td><td class="${cls}">—</td><td class="${cls}">—</td><td class="${cls}">—</td>`;
+
+          const priceCell = h.price === null || h.price === undefined || h.price === ""
+            ? "—"
+            : formatMoney(h.price);
+          const fromOwner = h.from && h.from === h.owner;
+          const toOwner = h.to && h.to === h.owner;
+
+          return `<td class="${cls} history-group-start">${esc(h.type)}</td>
+                  <td class="${cls}">${esc(formatDate(h.timestamp))}</td>
+                  <td class="${cls}">${esc(priceCell)}</td>
+                  <td class="${cls}${fromOwner ? " history-owner-cell" : ""}">${esc(h.from)}</td>
+                  <td class="${cls}${toOwner ? " history-owner-cell" : ""}">${esc(h.to)}</td>`;
+        }).join("");
+
+        return `<tr>
+          <td>${esc(r.name)}</td>
+          <td>${esc(r.uid)}</td>
+          <td>${esc(r.owner)}</td>
+          <td>${esc(r.quality)}</td>
+          <td>${esc(r.armor)}</td>
+          <td>${esc(r.damage)}</td>
+          <td>${esc(r.accuracy)}</td>
+          <td>${esc(r.bonus1)}</td>
+          <td>${esc(r.bonus1Value)}</td>
+          <td>${esc(r.bonus2)}</td>
+          <td>${esc(r.bonus2Value)}</td>
+          <td>${r.profit === null ? "—" : esc(formatMoney(r.profit))}</td>
+          ${history}
+        </tr>`;
+      }).join("")}
+    </tbody>`;
+
+  bindTransactionHistoryControls();
+
+  empty.style.display = rows.length ? "none" : "block";
+  if (!rows.length) empty.textContent = "No transaction history found.";
+}
+
+function render() {
+  renderTabs();
+  renderTableActions();
+
+  if (state.active === SUMMARY_TAB.key) {
+    renderUniqueItemsTable();
+    return;
+  }
+
+  const table = document.getElementById("table");
+  const showPrice = logHasPrice(state.active);
+  const editablePrice = logHasEditablePrice(state.active);
+  const partyLabel = logPartyLabel(state.active);
+  const currentHasPrice = !!table.querySelector('th[data-field="price"]');
+  const currentHasParty = !!table.querySelector('th[data-field="party"]');
+  if (!table.querySelector("#headerRow") ||
+      !table.querySelector('th[data-field="owner"]') ||
+      currentHasPrice !== showPrice ||
+      currentHasParty !== !!partyLabel) {
+    table.innerHTML = buildNormalTableHead(showPrice, partyLabel) + "<tbody></tbody>";
+    bindTableControls();
+  }
+
+  const allRows = state.rows[state.active] || [];
+  const rows = getVisibleRows(allRows);
+  document.getElementById("tabs").querySelector(`[data-key="${state.active}"]`)?.classList.add("active");
+  const tbody = document.querySelector("#table tbody");
+  const empty = document.getElementById("empty");
+
+  const rowHtml = (r, hidden=false) => `<tr class="${hidden ? "hidden-row" : ""}">
+    <td>${esc(formatDate(r.timestamp))}</td>
+    <td>${esc(r.name)}</td>
+    <td>${esc(r.uid)}</td>
+    <td>${esc(r.owner)}</td>
+    ${showPrice ? (
+      editablePrice
+        ? `<td><input class="editable-price" type="text" inputmode="decimal" data-price-row="${esc(r.rowKey)}" value="${r.price === null || r.price === undefined || r.price === "" ? "" : esc(formatEditablePrice(r.price))}" placeholder="—"></td>`
+        : `<td>${esc(formatMoney(r.price))}</td>`
+    ) : ""}
+    ${partyLabel ? `<td>${esc(r.party)}</td>` : ""}
+    <td>${esc(r.quality)}</td>
+    <td>${esc(r.armor)}</td>
+    <td>${esc(r.damage)}</td>
+    <td>${esc(r.accuracy)}</td>
+    <td>${esc(r.bonus1)}</td>
+    <td>${esc(r.bonus1Value)}</td>
+    <td>${esc(r.bonus2)}</td>
+    <td>${esc(r.bonus2Value)}</td>
+    <td><button type="button" class="row-action" data-row-key="${esc(r.rowKey)}" data-hide="${hidden ? "0" : "1"}">${hidden ? "Unhide" : "Hide"}</button></td>
+  </tr>`;
+
+  let html = rows.map(r => rowHtml(r, false)).join("");
+
+  if (state.showHidden) {
+    const hiddenRows = sortRowsLikeCurrent(
+      allRows.filter(r => state.hiddenRows.has(r.rowKey))
+    );
+    html += hiddenRows.map(r => rowHtml(r, true)).join("");
+  }
+
+  tbody.innerHTML = html;
+
+  tbody.querySelectorAll(".row-action").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setRowHidden(btn.dataset.rowKey, btn.dataset.hide === "1");
+    });
+  });
+
+  tbody.querySelectorAll("[data-price-row]").forEach(input => {
+    const commitPrice = () => {
+      const rowKey = input.dataset.priceRow;
+      const previous = state.manualPrices.has(rowKey)
+        ? state.manualPrices.get(rowKey)
+        : null;
+
+      if (!setManualPrice(rowKey, input.value)) {
+        input.value = formatEditablePrice(previous);
+        return;
+      }
+
+      const current = state.manualPrices.has(rowKey)
+        ? state.manualPrices.get(rowKey)
+        : null;
+      input.value = formatEditablePrice(current);
+      render();
+    };
+
+    input.addEventListener("blur", commitPrice);
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        input.blur();
+      }
+    });
+  });
+
+  const renderedRowCount = rows.length + (
+    state.showHidden ? allRows.filter(r => state.hiddenRows.has(r.rowKey)).length : 0
+  );
+  empty.style.display = renderedRowCount ? "none" : "block";
+  if (!renderedRowCount) {
+    const nonHiddenCount = allRows.filter(r => !state.hiddenRows.has(r.rowKey)).length;
+    empty.textContent = nonHiddenCount
+      ? "No rows match the current filters."
+      : (allRows.length ? "All rows are hidden." : "No matching weapon or armor entries found.");
+  }
+
+  document.querySelectorAll("[data-filter]").forEach(input => {
+    input.value = state.filters[input.dataset.filter] || "";
+  });
+  updateSortIndicators();
+}
+
+function setKeyRowStatus(keyRow, message, isError=false) {
+  const el = keyRow?.querySelector(".key-owner");
+  if (!el) return;
+  el.textContent = message || "";
+  el.style.color = isError ? "var(--danger)" : "";
+}
+
+async function loadAll(key, keyRow=null) {
+  const requestState = getKeyRequestState(key);
+  requestState.keyRow = keyRow;
+  setKeyRowStatus(keyRow, "Identifying user...");
+  setPerKeyStatus(key, "Identifying user...");
+  setKeyPhase(key, "owner /user/basic");
+
+  const owner = await getOwnerBasic(key);
+  const ownerId = String(owner.id);
+  state.loadedOwners.set(ownerId, owner.name);
+  setKeyRowStatus(keyRow, owner.name);
+
+  window.tornDebug = window.tornDebug || {};
+  window.tornDebug.owners = window.tornDebug.owners || {};
+  window.tornDebug.owners[ownerId] = window.tornDebug.owners[ownerId] || {};
+  const ownerDebug = window.tornDebug.owners[ownerId];
+  ownerDebug.owner = owner;
+
+  // Tables remain empty after page open. Cached rows are only restored when the
+  // user presses this owner's Load button.
+  setKeyPhase(key, "loading IndexedDB cache");
+  const cached = await getOwnerCache(ownerId);
+  const cachedRows = cached?.rows || {};
+  const watermarks = { ...(cached?.watermarks || {}) };
+  let tradeWatermark = Number(cached?.tradeWatermark || 0);
+
+  // Replace this owner's current in-memory rows with its cached rows.
+  for (const spec of LOGS) {
+    let ownerRows = Array.isArray(cachedRows[spec.key]) ? cachedRows[spec.key] : [];
+
+    // Manual send/receive prices live separately so clearing them to null remains
+    // authoritative even if the cached processed row contains an older value.
+    if (["itemsSent", "itemsReceived"].includes(spec.key)) {
+      ownerRows = ownerRows.map(row => ({
+        ...row,
+        price: state.manualPrices.has(row.rowKey)
+          ? state.manualPrices.get(row.rowKey)
+          : null
+      }));
+    }
+
+    state.rows[spec.key] = [
+      ...(state.rows[spec.key] || []).filter(r => String(r.ownerId ?? "") !== ownerId),
+      ...ownerRows
+    ];
+
+    if (!watermarks[spec.key]) {
+      watermarks[spec.key] = maxTimestamp(ownerRows);
+    }
+  }
+
+  if (!tradeWatermark) {
+    tradeWatermark = Math.max(
+      maxTimestamp(cachedRows.tradeBuys || []),
+      maxTimestamp(cachedRows.tradeSells || [])
+    );
+  }
+  render();
+
+  status(`${owner.name}: loading weapon and armor catalog...`);
+  setKeyPhase(key, "weapon/armor catalog");
+  const catalog = await getEquipmentCatalog(key);
+  state.itemsById = catalog;
+  state.equipmentIds = new Set(catalog.keys());
+  ownerDebug.catalog = { count: catalog.size, itemsById: catalog, itemIds: [...catalog.keys()] };
+  if (!catalog.size) throw new Error("No Weapon or Armor items were returned by /torn/items.");
+
+  for (let i = 0; i < LOGS.length; i++) {
+    const spec = LOGS[i];
+    if (spec.trade) continue;
+    if (!spec.id) continue;
+
+    const fromTimestamp = Number(watermarks[spec.key] || 0) || null;
+    status(`${owner.name}: loading ${spec.label} (${i+1}/${LOGS.length})...`);
+    setKeyPhase(
+      key,
+      `${spec.label} logs${fromTimestamp ? ` from ${fromTimestamp}` : ""}`
+    );
+
+    const logs = await getAllLogEntries(spec.id, key, fromTimestamp);
+    const newestSourceTimestamp = logs.reduce(
+      (m, log) => Math.max(m, Number(log?.timestamp || 0)),
+      Number(watermarks[spec.key] || 0)
+    );
+    watermarks[spec.key] = newestSourceTimestamp;
+
+    const extracted = logs.flatMap(log => extractRowsFromLog(log, catalog, spec));
+    const accepted = extracted.filter(row => isEquipmentRow(row, catalog));
+    const rejected = extracted.filter(row => !isEquipmentRow(row, catalog));
+    let rows = accepted;
+
+    ownerDebug[spec.key] = {
+      logId: spec.id,
+      label: spec.label,
+      fromTimestamp,
+      rawLogCount: logs.length,
+      rawLogs: logs,
+      shapes: logs.slice(0, 20).map(summarizeLogShape),
+      extractedCount: extracted.length,
+      extractedRows: extracted,
+      acceptedCount: accepted.length,
+      rejectedCount: rejected.length,
+      rejectedItemIds: [...new Set(rejected.map(r => r.itemId).filter(x => x !== null))]
+    };
+
+    const detailUids = rows.filter(r => r.uid).map(r => r.uid);
+    if (detailUids.length) {
+      status(`${owner.name} / ${spec.label}: loading details for ${new Set(detailUids).size} unique items...`);
+      setKeyPhase(key, `${spec.label} itemdetails`);
+      const detailMap = await getDetailsForUids(detailUids, key);
+      rows = rows.map(r => r.uid ? mergeDetails(r, detailMap.get(String(r.uid))) : r);
+    }
+
+    const beforeRarityFilter = rows.length;
+    const allowedRarities = new Set(["yellow", "orange", "red"]);
+    rows = rows.filter(r =>
+      r.uid &&
+      allowedRarities.has(String(r.rarity ?? "").toLowerCase())
+    );
+
+    for (const row of rows) {
+      row.ownerId = ownerId;
+      row.owner = owner.name;
+      row.rowKey = `${ownerId}:${row.rowKey}`;
+
+      if (["itemsSent", "itemsReceived"].includes(spec.key)) {
+        row.price = state.manualPrices.has(row.rowKey)
+          ? state.manualPrices.get(row.rowKey)
+          : null;
+      }
+    }
+
+    setKeyPhase(key, `${spec.label} user-name resolution`);
+    await resolvePeople(rows, key);
+
+    setKeyPhase(key, `${spec.label} flow resolution`);
+    await finalizeRowFlow(rows, spec, owner, key);
+
+    ownerDebug[spec.key].beforeRarityFilterCount = beforeRarityFilter;
+    ownerDebug[spec.key].rarityFilteredOutCount = beforeRarityFilter - rows.length;
+    ownerDebug[spec.key].finalRows = rows;
+    ownerDebug[spec.key].finalCount = rows.length;
+
+    const existingOwnerRows = (state.rows[spec.key] || []).filter(
+      r => String(r.ownerId ?? "") === ownerId
+    );
+    const mergedOwnerRows = mergeRowsByKey(existingOwnerRows, rows);
+
+    state.rows[spec.key] = [
+      ...(state.rows[spec.key] || []).filter(r => String(r.ownerId ?? "") !== ownerId),
+      ...mergedOwnerRows
+    ];
+    render();
+  }
+
+  // Trades use their own source watermark, since many completed trades do not
+  // contain qualifying weapons/armour and therefore never become table rows.
+  setKeyPhase(key, `trades${tradeWatermark ? ` from ${tradeWatermark}` : ""}`);
+  const tradeRows = await loadTradeRows(owner, key, ownerDebug, tradeWatermark || null);
+
+  const existingBuys = (state.rows.tradeBuys || []).filter(r => String(r.ownerId ?? "") === ownerId);
+  const existingSells = (state.rows.tradeSells || []).filter(r => String(r.ownerId ?? "") === ownerId);
+  const mergedBuys = mergeRowsByKey(existingBuys, tradeRows.buys);
+  const mergedSells = mergeRowsByKey(existingSells, tradeRows.sells);
+
+  state.rows.tradeBuys = [
+    ...(state.rows.tradeBuys || []).filter(r => String(r.ownerId ?? "") !== ownerId),
+    ...mergedBuys
+  ];
+  state.rows.tradeSells = [
+    ...(state.rows.tradeSells || []).filter(r => String(r.ownerId ?? "") !== ownerId),
+    ...mergedSells
+  ];
+
+  const rawTradeTimestamps = ownerDebug.trades?.rawTrades || [];
+  tradeWatermark = rawTradeTimestamps.reduce(
+    (m, trade) => Math.max(m, Number(trade?.timestamp || 0)),
+    tradeWatermark || 0
+  );
+
+  // Cache processed rows for this owner plus source watermarks. The next page
+  // session still starts visually empty; these rows are restored only on Load.
+  const rowsForCache = {};
+  for (const spec of LOGS) {
+    rowsForCache[spec.key] = (state.rows[spec.key] || []).filter(
+      r => String(r.ownerId ?? "") === ownerId
+    );
+  }
+
+  setKeyPhase(key, "saving IndexedDB cache");
+  await putOwnerCache({
+    ownerId,
+    ownerName: owner.name,
+    rows: rowsForCache,
+    watermarks,
+    tradeWatermark,
+    savedAt: Date.now()
+  });
+
+  render();
+
+  const ownerTotal = LOGS.reduce(
+    (n, spec) => n + (state.rows[spec.key] || []).filter(r => String(r.ownerId) === ownerId).length,
+    0
+  );
+  status(`${owner.name}: done. ${ownerTotal} matching weapon/armor entries loaded.`);
+  setKeyRowStatus(keyRow, `${owner.name} — loaded`);
+  setPerKeyStatus(key, "Loaded");
+  return owner;
+}
+
+function readSavedKeys() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("tornApiKeys") || "[]");
+    if (Array.isArray(parsed) && parsed.length) return parsed.filter(Boolean);
+  } catch (_) {}
+
+  const legacy = getCookie("tornApiKeys");
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(legacy));
+      if (Array.isArray(parsed)) {
+        const keys = parsed.filter(Boolean);
+        localStorage.setItem("tornApiKeys", JSON.stringify(keys));
+        return keys;
+      }
+    } catch (_) {}
+  }
+
+  const legacySingle = getCookie("tornApiKey");
+  if (legacySingle) {
+    const key = decodeURIComponent(legacySingle);
+    if (key) {
+      localStorage.setItem("tornApiKeys", JSON.stringify([key]));
+      return [key];
+    }
+  }
+  return [];
+}
+
+function saveKeys() {
+  const keys = [...document.querySelectorAll(".api-key-input")]
+    .map(input => input.value.trim())
+    .filter(Boolean);
+  localStorage.setItem("tornApiKeys", JSON.stringify(keys));
+}
+
+function refreshRemoveButtons() {
+  const rows = [...document.querySelectorAll(".key-row")];
+  rows.forEach((row, i) => {
+    const btn = row.querySelector(".remove-key-btn");
+    if (btn) btn.style.display = i === 0 ? "none" : "";
+  });
+}
+
+function addKeyRow(initialKey="") {
+  const rows = document.getElementById("keyRows");
+  const row = document.createElement("div");
+  row.className = "key-row";
+  row.innerHTML = `
+    <input class="api-key-input" type="password" autocomplete="off" placeholder="Torn API key" value="${escInput(initialKey)}">
+    <button class="load-key-btn" type="button">Load data</button>
+    <button class="remove-key-btn" type="button">Remove</button>
+    <span class="key-owner"></span>
+    <span class="key-status"></span>
+  `;
+
+  const input = row.querySelector(".api-key-input");
+  const button = row.querySelector(".load-key-btn");
+  const removeButton = row.querySelector(".remove-key-btn");
+
+  input.addEventListener("change", saveKeys);
+  removeButton.addEventListener("click", () => {
+    row.remove();
+    saveKeys();
+    refreshRemoveButtons();
+  });
+  button.addEventListener("click", async () => {
+    const key = input.value.trim();
+    if (!key) return;
+
+    saveKeys();
+    button.disabled = true;
+    try {
+      await loadAll(key, row);
+    } catch (err) {
+      console.error(err);
+      status(err?.message || String(err), true);
+      setKeyRowStatus(row, err?.message || String(err), true);
+      const keyState = getKeyRequestState(key);
+      setPerKeyStatus(key, err?.message || String(err), true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  rows.appendChild(row);
+  refreshRemoveButtons();
+}
+
+document.getElementById("addKeyBtn").addEventListener("click", () => {
+  addKeyRow("");
+});
+
+const savedKeys = readSavedKeys();
+if (savedKeys.length) {
+  savedKeys.forEach(addKeyRow);
+} else {
+  addKeyRow("");
+}
+
+bindTableControls();
+render();
+
+</script>
+</body>
+</html>
