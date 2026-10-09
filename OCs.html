@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Torn OC Report</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --plane: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --bar-succ: #2a78d6;
+    --bar-exp: #eb6834;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --warning: #fab219;
+    --accent-wash: rgba(42, 120, 214, 0.08);
+    --delta-up: #006300;
+    --delta-down: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --plane: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --bar-succ: #3987e5;
+      --bar-exp: #d95926;
+      --accent-wash: rgba(57, 135, 229, 0.12);
+      --delta-up: #0ca30c;
+      --delta-down: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --bar-succ: #3987e5;
+    --bar-exp: #d95926;
+    --accent-wash: rgba(57, 135, 229, 0.12);
+    --delta-up: #0ca30c;
+    --delta-down: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 20px 64px;
+    background: var(--plane);
+    color: var(--text-primary);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1340px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 22px; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+
+  /* ---- controls ---- */
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  input[type="text"], input[type="password"], input[type="date"] {
+    font: inherit;
+    padding: 7px 9px;
+    border: 1px solid var(--baseline);
+    border-radius: 6px;
+    background: var(--plane);
+    color: var(--text-primary);
+    min-width: 150px;
+  }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--bar-succ); outline-offset: 1px; }
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 1px solid var(--baseline);
+    background: var(--plane);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--accent-wash); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--bar-succ); border-color: var(--bar-succ); color: #fff; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--bar-succ); }
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .presets button { padding: 6px 10px; font-size: 12px; font-weight: 500; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .check label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; color: var(--text-secondary); }
+
+  /* ---- status ---- */
+  #status { margin-top: 14px; font-size: 13px; color: var(--text-secondary); display: none; }
+  #status.on { display: block; }
+  .track { height: 6px; background: var(--grid); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .track > i { display: block; height: 100%; background: var(--bar-succ); border-radius: 4px; width: 0; transition: width 0.2s; }
+  .err {
+    display: none; margin-top: 14px; padding: 11px 13px;
+    border: 1px solid var(--critical); border-left-width: 3px; border-radius: 6px;
+    background: rgba(208, 59, 59, 0.07); color: var(--text-primary); font-size: 13px;
+  }
+  .err.on { display: block; }
+  .err b { color: var(--critical); }
+
+  /* ---- stat tiles ---- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+  .tile { background: var(--surface-1); padding: 14px 16px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  .tile .v { font-size: 25px; font-weight: 650; letter-spacing: -0.02em; margin-top: 4px; line-height: 1.15; }
+  .tile .d { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ---- table ---- */
+  .tablehead { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .tablehead h2 { font-size: 15px; margin: 0; }
+  .scroll { overflow: auto; max-height: 72vh; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+  th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+  th {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    font-weight: 600; cursor: pointer; user-select: none; position: sticky; top: 0;
+    background: var(--surface-1); border-bottom: 1px solid var(--baseline); z-index: 1;
+  }
+  th:hover { color: var(--text-primary); }
+  th.name, td.name { text-align: left; }
+  th[aria-sort]::after { content: " ▾"; }
+  th[aria-sort="ascending"]::after { content: " ▴"; }
+  tr.lvl { background: var(--accent-wash); }
+  tr.lvl td { font-weight: 650; }
+  tr.scn td.name { padding-left: 26px; color: var(--text-secondary); }
+  tr.tot td { font-weight: 700; border-top: 2px solid var(--baseline); border-bottom: none; background: var(--surface-1); }
+  tbody tr:hover:not(.tot) { background: var(--grid); }
+  .twist { display: inline-block; width: 12px; color: var(--muted); font-size: 10px; }
+  tr.lvl { cursor: pointer; }
+
+  /* bar cell: value above a thin single-series bar */
+  .barcell { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 62px; }
+  .bar { height: 6px; width: 54px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 4px; }
+  .bar.s > i { background: var(--bar-succ); }
+  .bar.x > i { background: var(--bar-exp); }
+  .dim { color: var(--muted); }
+  .note { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .note h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 7px; }
+  .note li { margin-bottom: 5px; }
+  .note code { background: var(--grid); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+  #results { display: none; }
+  #results.on { display: block; }
+  .empty { color: var(--text-secondary); padding: 10px 0; }
+  .keycard { padding-bottom: 14px; }
+  .opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+
+  /* ---- tabs ---- */
+  .tabs { display: flex; gap: 4px; margin-bottom: -1px; }
+  .tab {
+    font-weight: 600; font-size: 13px; padding: 9px 16px; cursor: pointer;
+    background: transparent; color: var(--text-secondary);
+    border: 1px solid transparent; border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--accent-wash); }
+  .tab.on {
+    background: var(--surface-1); color: var(--text-primary);
+    border-color: var(--border); border-bottom-color: var(--surface-1);
+  }
+  .panel { display: none; }
+  .panel.on { display: block; }
+
+  #cprstatus { margin-top: 14px; font-size: 13px; color: var(--text-secondary); display: none; }
+  #cprstatus.on { display: block; }
+  #cprresults { display: none; }
+  #cprresults.on { display: block; }
+
+  /* age range bar: min—max span with the mean marked */
+  .range { position: relative; height: 10px; width: 150px; margin-left: auto; background: var(--grid); border-radius: 4px; }
+  .range > i { position: absolute; top: 0; height: 100%; background: var(--bar-succ); border-radius: 4px; }
+  .range > b {
+    position: absolute; top: -2px; width: 2px; height: 14px;
+    background: var(--text-primary); box-shadow: 0 0 0 1.5px var(--surface-1); border-radius: 1px;
+  }
+  .cutbar {
+    display: none; flex-wrap: wrap; gap: 8px; align-items: center;
+    font-size: 12.5px; color: var(--text-secondary);
+    padding: 9px 11px; margin-bottom: 12px;
+    border: 1px solid var(--border); border-left: 3px solid var(--bar-succ); border-radius: 7px;
+    background: var(--accent-wash);
+  }
+  .cutbar.on { display: flex; }
+  .cutbar input { width: 84px; min-width: 0; padding: 4px 7px; font-size: 12.5px; text-align: right; }
+  .cutbar button { padding: 4px 10px; font-size: 12px; font-weight: 500; }
+  td.up { color: var(--delta-up); font-weight: 600; }
+  td.down { color: var(--delta-down); font-weight: 600; }
+  td.thresh input.edited { border-color: var(--bar-succ); font-weight: 600; }
+  td.thresh input {
+    width: 58px; min-width: 0; padding: 3px 5px; font-size: 12.5px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Torn Organized Crimes — faction report</h1>
+  <p class="sub" id="sub">Per-level and per-scenario breakdown of completed &amp; expired OCs: success rate, expiry rate, consumed-item cost, and the money the faction retained.</p>
+
+  <div class="card keycard">
+    <div class="controls">
+      <div class="field">
+        <label for="key">Torn API key</label>
+        <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="your Torn API key" />
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="check">
+          <input id="remember" type="checkbox" />
+          <label for="remember">Remember key in this browser</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" data-tab="report" aria-selected="true">Crimes report</button>
+    <button class="tab" role="tab" data-tab="cpr" aria-selected="false">CPR vs account age</button>
+  </div>
+
+  <section id="panel-report" class="panel on" role="tabpanel">
+  <div class="card">
+    <div class="controls">
+      <div class="field">
+        <label for="from">Start date (TCT)</label>
+        <input id="from" type="date" />
+      </div>
+      <div class="field">
+        <label for="to">End date (TCT, inclusive)</label>
+        <input id="to" type="date" />
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="go" class="primary">Build report</button>
+      </div>
+      <div class="field">
+        <label>Range presets</label>
+        <div class="presets">
+          <button data-months="12">Last 12 months</button>
+          <button data-months="6">Last 6 months</button>
+          <button data-months="3">Last 3 months</button>
+          <button data-ytd="1">Year to date</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status">
+      <span id="statustext"></span>
+      <div class="track"><i id="barfill"></i></div>
+    </div>
+    <div id="err" class="err"></div>
+  </div>
+
+  <div id="results">
+    <div class="tiles" id="tiles"></div>
+
+    <div class="card">
+      <div class="tablehead">
+        <h2 id="tabletitle">Breakdown by level and scenario</h2>
+        <div class="presets">
+          <div class="check">
+            <input id="detail" type="checkbox" />
+            <label for="detail">Detail columns</label>
+          </div>
+          <div class="check">
+            <input id="flat" type="checkbox" />
+            <label for="flat">Flat scenario list</label>
+          </div>
+          <div class="check">
+            <input id="whatif" type="checkbox" />
+            <label for="whatif">What-if faction cut</label>
+          </div>
+          <button id="expandall">Expand all</button>
+          <button id="csv">Download CSV</button>
+        </div>
+      </div>
+      <div id="cutbar" class="cutbar">
+        <span>Set every level to</span>
+        <input id="cutall" type="number" min="0" max="100" step="0.1" placeholder="e.g. 25" />
+        <span>%</span>
+        <button id="cutapply">Apply</button>
+        <button id="cutreset">Reset to actual</button>
+        <span id="cutsummary" class="dim"></span>
+      </div>
+      <div class="scroll">
+        <table id="tbl">
+          <thead><tr id="thr"></tr></thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+      <div id="emptymsg" class="empty" style="display:none">No crimes completed or expired in this date range.</div>
+    </div>
+
+  </div>
+  </section>
+
+  <section id="panel-cpr" class="panel" role="tabpanel">
+    <div class="card">
+      <div class="controls">
+        <div class="field">
+          <label for="tskey">TornStats key <span class="opt">(blank = use the Torn key above)</span></label>
+          <input id="tskey" type="password" autocomplete="off" spellcheck="false" placeholder="same as Torn key" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="gocpr" class="primary">Build CPR table</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="check">
+            <input id="activeonly" type="checkbox" />
+            <label for="activeonly">Only members currently in the faction</label>
+          </div>
+        </div>
+      </div>
+      <div id="cprstatus">
+        <span id="cprstatustext"></span>
+        <div class="track"><i id="cprbarfill"></i></div>
+      </div>
+      <div id="cprerr" class="err"></div>
+    </div>
+
+    <div id="cprresults">
+      <div class="tiles" id="cprtiles"></div>
+      <div class="card">
+        <div class="tablehead">
+          <h2>Account age by crime level — meets this level, not covered at the next</h2>
+          <div class="presets">
+            <button id="cprreset">Reset thresholds</button>
+            <button id="cprcsv">Download CSV</button>
+          </div>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr id="cprthr"></tr></thead>
+            <tbody id="cprtb"></tbody>
+          </table>
+        </div>
+        <div id="cpremptymsg" class="empty" style="display:none">No CPR data returned for this faction.</div>
+      </div>
+      <div class="card note" id="cprnotes"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Torn API v2 access
+   ============================================================ */
+const API = "https://api.torn.com/v2";
+const PAGE = 100;      // server caps `limit` at 100
+
+let CALLS = 0;   // requests actually issued, for the run summary
+
+/* ------------------------------------------------------------
+   Rate limiting.
+
+   Torn documents 100 requests per MINUTE per key, and says so in the text of
+   the error it throws when you cross it: code 5, "Current private key is
+   banned for a small period of time because of too many requests (max 100 per
+   minute)". Code 8 is the harsher IP-level version.
+
+   Rather than trust any single figure, this self-paces against a budget and
+   then *listens*: any rate-limit answer widens the budget for the rest of the
+   run, so the page settles onto whatever the real ceiling turns out to be
+   instead of hammering into it repeatedly. Raise RATE.perMin if you know your
+   key is allowed more.
+   ------------------------------------------------------------ */
+const RATE = {
+  perMin: 95,         // self-imposed budget, just under the documented 100
+  stamps: [],         // request times inside the trailing 60s
+  pauseUntil: 0,      // set when the API tells us to slow down
+  hits: 0,            // how many times it has told us
+  onWait: null,       // optional (seconds, reason) => void, for status text
+};
+
+async function rateGate() {
+  for (;;) {
+    const now = Date.now();
+    if (now < RATE.pauseUntil) {
+      const left = RATE.pauseUntil - now;
+      if (RATE.onWait) RATE.onWait(Math.ceil(left / 1000), "rate limited");
+      await sleep(Math.min(left, 1000));
+      continue;
+    }
+    RATE.stamps = RATE.stamps.filter((t) => now - t < 60000);
+    if (RATE.stamps.length < RATE.perMin) { RATE.stamps.push(now); return; }
+    const wait = Math.max(50, 60000 - (now - RATE.stamps[0]));
+    if (RATE.onWait && wait > 1500) RATE.onWait(Math.ceil(wait / 1000), "pacing");
+    await sleep(Math.min(wait, 1000));
+  }
+}
+
+/* A rate-limit answer can arrive three ways: Torn's own code 5 / code 8 in a
+   200 body, or a plain HTTP 429 from the edge. */
+function rateLimitPenalty(res, code) {
+  if (code !== 5 && code !== 8 && res.status !== 429) return 0;
+  const retryAfter = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) return Math.min(retryAfter, 120) * 1000;
+  // Torn's block is "a small period of time" without saying how small;
+  // a minute clears code 5 in practice, and code 8 deserves longer.
+  return code === 8 ? 120000 : 60000;
+}
+
+async function apiGet(path, params, key) {
+  const qs = new URLSearchParams({ ...params, key });
+  const url = `${API}${path}?${qs}`;
+  for (let attempt = 0; ; attempt++) {
+    await rateGate();
+    CALLS++;
+    let res, body;
+    try {
+      res = await fetch(url, { headers: { Accept: "application/json" } });
+    } catch (e) {
+      // network / blocked request
+      if (attempt < 2) { await sleep(800 * (attempt + 1)); continue; }
+      throw new Error(
+        "Could not reach api.torn.com. Check your connection, and make sure no " +
+        "extension or content blocker is blocking the request."
+      );
+    }
+    try { body = await res.json(); }
+    catch (e) {
+      const penalty = rateLimitPenalty(res, 0);
+      if (penalty && attempt < 5) { RATE.pauseUntil = Date.now() + penalty; continue; }
+      throw new Error(`api.torn.com returned a non-JSON response (HTTP ${res.status}).`);
+    }
+
+    // Torn signals failure in the body, usually with HTTP 200.
+    const code = body && body.error ? body.error.code : 0;
+    const penalty = rateLimitPenalty(res, code);
+    if (penalty) {
+      RATE.hits++;
+      // Back off AND slow down permanently: whatever budget we were using was
+      // too generous, so stop re-learning the same lesson.
+      RATE.perMin = Math.max(20, Math.floor(RATE.perMin * 0.6));
+      RATE.stamps = [];
+      RATE.pauseUntil = Date.now() + penalty;
+      if (attempt < 5) continue;
+    }
+    if (body && body.error) {
+      const { code: c, error } = body.error;
+      throw new Error(`Torn API error ${c}: ${error}${HINTS[c] ? " — " + HINTS[c] : ""}`);
+    }
+    return body;
+  }
+}
+
+const HINTS = {
+  1: "no API key supplied.",
+  5: "too many requests — the key is briefly blocked. The page backs off and retries on its own; this only surfaces if it kept happening.",
+  8: "your IP is temporarily blocked for abuse. Wait a few minutes before retrying.",
+  2: "the key is incorrect or has been deleted.",
+  6: "a requested ID was rejected.",
+  7: "this key lacks faction access. Organized Crimes need a key with faction permissions, and your position must be allowed to see OCs.",
+  10: "this key has been paused by its owner.",
+  13: "the key's owner is inactive.",
+  16: "insufficient access level. Create a key with faction permissions enabled.",
+  18: "this key has been migrated or revoked.",
+};
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* Errors about the KEY rather than the thing being asked for. If one of these
+   comes back mid-sweep, every remaining call fails the same way, so stop. */
+const FATAL_CODES = /^Torn API error (1|2|9|10|11|12|13|16|17|18):/;
+
+/* The completion timestamp the API's from/to filter acts on:
+   executed_at for Successful/Failure, expired_at for Expired. */
+function completedAt(c) {
+  return c.status === "Expired" ? c.expired_at : c.executed_at;
+}
+
+/* ------------------------------------------------------------
+   Paginating a date-bounded /faction/crimes query.
+
+   IMPORTANT: when `from`/`to` are present the API SILENTLY IGNORES
+   `offset` — every page comes back identical. The only way to walk a
+   date-bounded result set is to sort ASC and advance `from` to the last
+   completion timestamp seen. The boundary row repeats on each page, so
+   results are de-duplicated by crime id.
+   ------------------------------------------------------------ */
+async function fetchCrimes(cat, from, to, key, onProgress) {
+  const byId = new Map();
+  let cursor = from, page = 0;
+
+  while (true) {
+    const body = await apiGet("/faction/crimes", {
+      cat, limit: PAGE, from: cursor, to, sort: "ASC",
+    }, key);
+
+    const batch = body.crimes || [];
+    if (!batch.length) break;
+
+    let fresh = 0;
+    let maxTs = cursor;
+    for (const c of batch) {
+      if (!byId.has(c.id)) fresh++;
+      byId.set(c.id, c);
+      const ts = completedAt(c);
+      if (ts != null && ts > maxTs) maxTs = ts;
+    }
+    page++;
+    onProgress(cat, byId.size, page);
+
+    if (batch.length < PAGE) break;           // last page
+    // Re-request from the boundary timestamp to avoid dropping ties.
+    // If a whole page was duplicates we'd spin, so step past it.
+    cursor = fresh > 0 ? maxTs : maxTs + 1;
+    if (cursor > to) break;
+  }
+  return [...byId.values()];
+}
+
+/* Item prices. /torn/items ignores limit/offset and returns everything,
+   so request exactly the ids we need. */
+async function fetchPrices(ids, key, onProgress) {
+  const prices = new Map();
+  const list = [...ids];
+  const CHUNK = 100;
+  for (let i = 0; i < list.length; i += CHUNK) {
+    const slice = list.slice(i, i + CHUNK);
+    const body = await apiGet("/torn/items", { ids: slice.join(",") }, key);
+    for (const it of body.items || []) {
+      const v = it.value || {};
+      // An item is valued two different ways depending on which side of the
+      // ledger it lands on:
+      //   cost   — what it took to put the item in the slot, so the item
+      //            market comes first (that's where OC items get bought).
+      //   reward — what the faction can realise for an item it was paid in,
+      //            so the shop sell price comes first and the market is the
+      //            fallback for items no shop buys.
+      prices.set(it.id, {
+        name: it.name,
+        cost: v.market_price || v.sell_price || v.buy_price || 0,
+        reward: v.sell_price || v.market_price || v.buy_price || 0,
+      });
+    }
+    onProgress(prices.size, list.length);
+  }
+  return prices;
+}
+
+/* ============================================================
+   Aggregation
+   ============================================================ */
+function blank() {
+  return {
+    crimes: 0, succ: 0, fail: 0, expired: 0,
+    usedN: 0, usedCost: 0, usedCostFaction: 0, usedCostMember: 0,
+    gross: 0, paidOut: 0, cashKept: 0,
+    itemRewardValue: 0,
+  };
+}
+
+function accumulate(b, c, prices) {
+  b.crimes++;
+  if (c.status === "Successful") b.succ++;
+  else if (c.status === "Failure") b.fail++;
+  else if (c.status === "Expired") b.expired++;
+
+  for (const slot of c.slots || []) {
+    const io = slot.user && slot.user.item_outcome;
+    if (!io) continue;
+    const price = (prices.get(io.item_id) || {}).cost || 0;
+    if (io.outcome === "used") {
+      b.usedN++;
+      b.usedCost += price;
+      if (io.owned_by === "faction") b.usedCostFaction += price;
+      else b.usedCostMember += price;
+    }
+    // "unused" items go back to their owner, and "lost" ones are not counted
+    // here — only outcome "used" is treated as a cost.
+  }
+
+  const r = c.rewards;
+  if (!r) return;                        // Failure and Expired carry no rewards
+  const money = r.money || 0;
+  b.gross += money;
+
+  for (const ir of r.items || []) {
+    const price = (prices.get(ir.id) || {}).reward || 0;
+    // quantity is genuinely 0 on some rows — an item listed as a possible
+    // reward that wasn't actually awarded. `?? 1` so a real 0 survives.
+    b.itemRewardValue += price * (ir.quantity ?? 1);
+  }
+
+  const payout = r.payout;
+  if (!payout) {
+    // Nothing has been distributed yet: the faction still holds all of it.
+    b.cashKept += money;
+  } else {
+    const pct = payout.percentage || 0;
+    b.paidOut += money * (pct / 100);
+    b.cashKept += money * (1 - pct / 100);
+  }
+}
+
+function aggregate(crimes, prices) {
+  const levels = new Map();   // difficulty -> {stats, scenarios: Map}
+  const total = blank();
+
+  for (const c of crimes) {
+    const lvl = c.difficulty;
+    if (!levels.has(lvl)) levels.set(lvl, { level: lvl, stats: blank(), scenarios: new Map() });
+    const L = levels.get(lvl);
+    if (!L.scenarios.has(c.name)) L.scenarios.set(c.name, { name: c.name, level: lvl, stats: blank() });
+
+    accumulate(L.stats, c, prices);
+    accumulate(L.scenarios.get(c.name).stats, c, prices);
+    accumulate(total, c, prices);
+  }
+
+  const rows = [...levels.values()].sort((a, b) => a.level - b.level);
+  for (const L of rows) L.scenarioList = [...L.scenarios.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return { rows, total };
+}
+
+/* Derived rates.
+   successRate is over ATTEMPTED crimes (executed: Successful + Failure) —
+   an expired crime was never attempted, so counting it as a failure would
+   understate how the team actually performs.
+   expiredRate is over ALL crimes in the window. */
+const attempted = (s) => s.succ + s.fail;
+const successRate = (s) => (attempted(s) ? (s.succ / attempted(s)) * 100 : null);
+const expiredRate = (s) => (s.crimes ? (s.expired / s.crimes) * 100 : null);
+/* What the faction ended up with: the cash it did not pay out, plus the
+   items it was paid in. The payout percentage splits cash only — item
+   rewards go to the armoury, so the faction keeps all of their value. */
+const kept = (s) => s.cashKept + s.itemRewardValue;
+const netToFaction = (s) => kept(s) - s.usedCostFaction;
+
+/* ---- what-if: a different faction cut, per level ----------------------
+   The faction's cut is the mirror of the payout percentage: payout % goes to
+   members, the rest stays. CUTS holds a replacement cut per level; each one
+   starts at the cut that level actually ran at, so the simulation opens on
+   reality and any edit shows as a clean delta.
+
+   Only the CASH half moves. Item rewards are not split by the payout
+   percentage, so they ride along unchanged into the simulated total. */
+/* A level is only in CUTS once the user has actually typed a cut for it.
+   Absent means "use what really happened", exactly — seeding the map with a
+   rounded version of the real cut would open the panel on a delta of millions
+   that is pure rounding error. */
+let CUTS = new Map();   // level -> faction cut %, overriding what actually happened
+
+const actualCutPct = (s) => (s && s.gross > 0 ? (s.cashKept / s.gross) * 100 : null);
+const levelStatsOf = (lvl) => ((STATE.rows || []).find((L) => L.level === lvl) || {}).stats || null;
+const cutFor = (lvl) => (lvl == null ? null : CUTS.get(lvl));
+
+/* What the cut box shows: the override if there is one, otherwise the cut the
+   level really ran at, rounded for legibility only. */
+function displayCut(lvl) {
+  if (CUTS.has(lvl)) return CUTS.get(lvl);
+  const a = actualCutPct(levelStatsOf(lvl));
+  return a == null ? null : Math.round(a * 10) / 10;
+}
+
+function simCashKept(s, lvl) {
+  if (lvl == null || !CUTS.has(lvl)) return s.cashKept;   // untouched -> exact actual
+  return s.gross * (CUTS.get(lvl) / 100);
+}
+const simKept = (s, lvl) => simCashKept(s, lvl) + s.itemRewardValue;
+
+/* The total row spans every level, so it has to be re-summed per level
+   rather than read off STATE.total. */
+function simTotal() {
+  let cash = 0, items = 0;
+  for (const L of STATE.rows || []) {
+    cash += simCashKept(L.stats, L.level);
+    items += L.stats.itemRewardValue;
+  }
+  return { cashKept: cash, kept: cash + items };
+}
+
+function resetCuts() { CUTS = new Map(); }
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+const COLS = [
+  { k: "name",      t: "Level / scenario", cls: "name", detail: false, get: (r) => r.label, kind: "text" },
+  { k: "crimes",    t: "Crimes",      get: (r) => r.stats.crimes,     kind: "int" },
+  { k: "succ",      t: "Success",     get: (r) => r.stats.succ,       kind: "int", detail: true },
+  { k: "fail",      t: "Failed",      get: (r) => r.stats.fail,       kind: "int", detail: true },
+  { k: "expired",   t: "Expired",     get: (r) => r.stats.expired,    kind: "int", detail: true },
+  { k: "srate",     t: "Success %",   get: (r) => successRate(r.stats), kind: "barS",
+    title: "Successful ÷ attempted (success + failed). Expired crimes excluded — they were never run." },
+  { k: "xrate",     t: "Expired %",   get: (r) => expiredRate(r.stats), kind: "barX",
+    title: "Expired ÷ all crimes in range." },
+  { k: "usedN",     t: "Items used",  get: (r) => r.stats.usedN,      kind: "int", detail: true },
+  { k: "usedCost",  t: "Item cost (used)", get: (r) => r.stats.usedCost, kind: "money",
+    title: "Market value of every item with outcome \"used\". Reusable items returned unused cost nothing." },
+  { k: "usedCostFaction", t: "— faction-owned", get: (r) => r.stats.usedCostFaction, kind: "money", detail: true,
+    title: "Consumed items that came out of the faction armoury." },
+  { k: "usedCostMember",  t: "— member-owned",  get: (r) => r.stats.usedCostMember,  kind: "money", detail: true,
+    title: "Consumed items supplied by members out of pocket." },
+  { k: "gross",     t: "Money (gross)", get: (r) => r.stats.gross,    kind: "money", detail: true },
+  { k: "paidOut",   t: "Paid to members", get: (r) => r.stats.paidOut, kind: "money", detail: true,
+    title: "Gross × payout percentage." },
+  { k: "kept",      t: "Faction kept", get: (r) => kept(r.stats),     kind: "money",
+    title: "Cash the faction did not pay out, plus the value of item rewards." },
+  { k: "cashKept",  t: "— cash", get: (r) => r.stats.cashKept, kind: "money", detail: true,
+    title: "Gross × (1 − payout %) — the cash share not paid out to members." },
+  { k: "itemRewardValue", t: "— item rewards", get: (r) => r.stats.itemRewardValue, kind: "money", detail: true,
+    title: "Item rewards at shop sell price (market price where no shop buys them). Not subject to the payout split." },
+  { k: "net",       t: "Net of faction items", get: (r) => netToFaction(r.stats), kind: "money", detail: true,
+    title: "Faction kept − cost of faction-owned items consumed." },
+
+  { k: "cut", t: "Faction cut %", kind: "cut", whatif: true,
+    title: "The share the faction keeps, i.e. 100 − payout %. Editable on level rows; scenarios inherit their level's figure. Starts at the cut the level actually ran at." },
+  { k: "simKept", t: "Kept at this cut", kind: "money", whatif: true,
+    get: (r) => (r.isTotal ? simTotal().kept : simKept(r.stats, r.level)),
+    title: "What the faction would have kept: gross × this cut, plus item rewards (which the payout split does not touch)." },
+  { k: "simDelta", t: "Δ vs actual", kind: "delta", whatif: true,
+    get: (r) => (r.isTotal ? simTotal().kept - kept(STATE.total) : simKept(r.stats, r.level) - kept(r.stats)),
+    title: "Simulated faction kept minus what actually happened." },
+];
+
+let STATE = { rows: [], total: null, prices: null, open: new Set(), sort: { key: null, dir: -1 }, meta: null };
+
+const $ = (id) => document.getElementById(id);
+const fmtInt = (n) => n.toLocaleString("en-US");
+const fmtPct = (n) => (n == null ? "—" : n.toFixed(1) + "%");
+const fmtMoney = (n) => {
+  if (n == null) return "—";
+  const r = Math.round(n);
+  return (r < 0 ? "-$" : "$") + Math.abs(r).toLocaleString("en-US");
+};
+
+function moneyShort(n) {
+  const sign = n < 0 ? "-" : "";
+  n = Math.abs(n);
+  const a = n;
+  if (a >= 1e9) return sign + (n / 1e9).toFixed(2).replace(/\.00$/, "") + "b";
+  if (a >= 1e6) return sign + (n / 1e6).toFixed(1).replace(/\.0$/, "") + "m";
+  if (a >= 1e3) return sign + (n / 1e3).toFixed(0) + "k";
+  return sign + String(Math.round(n));
+}
+
+function renderTiles() {
+  const t = STATE.total;
+  const tiles = [
+    { k: "Crimes in range", v: fmtInt(t.crimes),
+      d: `${fmtInt(t.succ)} success · ${fmtInt(t.fail)} failed · ${fmtInt(t.expired)} expired` },
+    { k: "Success rate", v: fmtPct(successRate(t)), d: `of ${fmtInt(attempted(t))} attempted` },
+    { k: "Expired rate", v: fmtPct(expiredRate(t)), d: `${fmtInt(t.expired)} never ran` },
+    { k: "Item cost (used)", v: "$" + moneyShort(t.usedCost),
+      d: `${fmtInt(t.usedN)} consumed · $${moneyShort(t.usedCostFaction)} from armoury` },
+    { k: "Faction kept", v: "$" + moneyShort(kept(t)),
+      d: `$${moneyShort(t.cashKept)} cash + $${moneyShort(t.itemRewardValue)} items` },
+  ];
+  if ($("whatif").checked && (STATE.rows || []).length) {
+    const sim = simTotal();
+    const delta = sim.kept - kept(t);
+    const sign = delta > 0 ? "+" : "";
+    tiles.push({ k: "Kept at these cuts", v: "$" + moneyShort(sim.kept),
+      d: Math.abs(delta) < 1 ? "same as actual" : `${sign}$${moneyShort(Math.abs(delta)).replace("-", "")} vs actual` });
+  }
+  $("tiles").innerHTML = tiles.map((x) =>
+    `<div class="tile"><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div><div class="d">${esc(x.d)}</div></div>`
+  ).join("");
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function activeCols() {
+  const showDetail = $("detail").checked;
+  const showWhatIf = $("whatif").checked;
+  return COLS.filter((c) => (c.whatif ? showWhatIf : showDetail || !c.detail));
+}
+
+function cell(col, row) {
+  // The cut column renders an input rather than a value, so it has no getter.
+  const v = col.get ? col.get(row) : null;
+  switch (col.kind) {
+    case "text":  return `<td class="name">${v}</td>`;
+    case "int":   return `<td>${v ? fmtInt(v) : '<span class="dim">0</span>'}</td>`;
+    case "money": return `<td>${v ? fmtMoney(v) : '<span class="dim">$0</span>'}</td>`;
+    case "delta": {
+      if (!v || Math.abs(v) < 1) return `<td><span class="dim">—</span></td>`;
+      return `<td class="${v > 0 ? "up" : "down"}">${v > 0 ? "+" : ""}${fmtMoney(v)}</td>`;
+    }
+    case "cut": {
+      const lvl = row.level;
+      if (row.isTotal || lvl == null) return `<td><span class="dim">per level</span></td>`;
+      const c = displayCut(lvl);
+      if (row.cls === "scn") {
+        // Scenario rows follow their level; only the level row is editable.
+        return `<td><span class="dim">${c == null ? "—" : c + "%"}</span></td>`;
+      }
+      const actual = actualCutPct(levelStatsOf(lvl));
+      const tip = actual == null
+        ? "no cash rewards at this level, so the cut changes nothing"
+        : `actually ran at ${actual.toFixed(2)}%` + (CUTS.has(lvl) ? " — overridden" : "");
+      return `<td class="thresh" title="${esc(tip)}">` +
+             `<input type="number" min="0" max="100" step="0.1" value="${c == null ? "" : c}" data-cut="${lvl}"` +
+             `${CUTS.has(lvl) ? ' class="edited"' : ""} /></td>`;
+    }
+    case "barS":
+    case "barX": {
+      if (v == null) return `<td><span class="dim">—</span></td>`;
+      const cls = col.kind === "barS" ? "s" : "x";
+      // Bars are proportional to 100% so every row shares one scale.
+      return `<td><div class="barcell"><span>${fmtPct(v)}</span>` +
+             `<div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, v)).toFixed(2)}%"></i></div></div></td>`;
+    }
+  }
+}
+
+function renderTable() {
+  const cols = activeCols();
+  const flat = $("flat").checked;
+
+  $("thr").innerHTML = cols.map((c) => {
+    const sorted = STATE.sort.key === c.k ? ` aria-sort="${STATE.sort.dir === 1 ? "ascending" : "descending"}"` : "";
+    const tip = c.title ? ` title="${esc(c.title)}"` : "";
+    return `<th class="${c.cls || ""}" data-k="${c.k}"${sorted}${tip}>${esc(c.t)}</th>`;
+  }).join("");
+
+  $("tabletitle").textContent = flat ? "All scenarios" : "Breakdown by level and scenario";
+
+  // Build the display list
+  let display = [];
+  if (flat) {
+    const all = [];
+    for (const L of STATE.rows) for (const s of L.scenarioList) {
+      all.push({ label: `${esc(s.name)} <span class="dim">· L${L.level}</span>`, stats: s.stats, cls: "scn", level: L.level, sortName: s.name });
+    }
+    display = sortRows(all);
+  } else {
+    const levels = sortRows(STATE.rows.map((L) => ({
+      label: `<span class="twist">${STATE.open.has(L.level) ? "▾" : "▸"}</span> Level ${L.level}`,
+      stats: L.stats, cls: "lvl", level: L.level, sortName: "L" + L.level, _L: L,
+    })));
+    for (const row of levels) {
+      display.push(row);
+      if (STATE.open.has(row.level)) {
+        const kids = sortRows(row._L.scenarioList.map((s) => ({
+          label: esc(s.name), stats: s.stats, cls: "scn", level: row.level, sortName: s.name,
+        })));
+        display.push(...kids);
+      }
+    }
+  }
+
+  const body = display.map((r) =>
+    `<tr class="${r.cls}"${r.level != null ? ` data-level="${r.level}"` : ""}>` +
+    cols.map((c) => cell(c, r)).join("") + "</tr>"
+  );
+
+  if (display.length) {
+    body.push(`<tr class="tot">` + cols.map((c) =>
+      c.k === "name" ? `<td class="name">Total</td>` : cell(c, { label: "Total", stats: STATE.total, isTotal: true })
+    ).join("") + "</tr>");
+  }
+
+  $("tb").innerHTML = body.join("");
+  $("emptymsg").style.display = display.length ? "none" : "block";
+  renderCutSummary();
+}
+
+function renderCutSummary() {
+  const on = $("whatif").checked;
+  $("cutbar").classList.toggle("on", on && (STATE.rows || []).length > 0);
+  if (!on || !(STATE.rows || []).length) return;
+  const sim = simTotal(), actual = kept(STATE.total);
+  const d = sim.kept - actual;
+  $("cutsummary").innerHTML = Math.abs(d) < 1
+    ? "— matches what actually happened"
+    : `— faction keeps <b>${fmtMoney(sim.kept)}</b> instead of ${fmtMoney(actual)} ` +
+      `(<span class="${d > 0 ? "up" : "down"}" style="font-weight:600">${d > 0 ? "+" : ""}${fmtMoney(d)}</span>)`;
+}
+
+function sortRows(rows) {
+  const { key, dir } = STATE.sort;
+  if (!key) return rows;
+  const col = COLS.find((c) => c.k === key);
+  if (!col) return rows;
+  return rows.slice().sort((a, b) => {
+    if (col.kind === "text") return dir * a.sortName.localeCompare(b.sortName);
+    const av = col.get(a), bv = col.get(b);
+    // Rows with no rate (nothing attempted) sort to the bottom either way.
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return dir * (av - bv);
+  });
+}
+
+/* ============================================================
+   CSV
+   ============================================================ */
+function toCSV() {
+  const cols = COLS; // export everything regardless of the detail toggle
+  const q = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [];
+  lines.push(`# Torn OC report ${STATE.meta.fromLabel} to ${STATE.meta.toLabel} (TCT)`);
+  lines.push(["Level", "Scenario", ...cols.slice(1).map((c) => c.t)].map(q).join(","));
+
+  const val = (c, r) => {
+    if (c.kind === "cut") { const x = displayCut(r.level); return x == null ? "" : x; }
+    const v = c.get(r);
+    if (v == null) return "";
+    return c.kind === "barS" || c.kind === "barX" ? v.toFixed(2) : Math.round(v);
+  };
+  for (const L of STATE.rows) {
+    lines.push([L.level, "(all)", ...cols.slice(1).map((c) => val(c, { ...L, level: L.level }))].map(q).join(","));
+    for (const s of L.scenarioList) {
+      lines.push([L.level, s.name, ...cols.slice(1).map((c) => val(c, { ...s, level: L.level }))].map(q).join(","));
+    }
+  }
+  lines.push(["", "TOTAL", ...cols.slice(1).map((c) => val(c, { stats: STATE.total, isTotal: true }))].map(q).join(","));
+  return lines.join("\n");
+}
+
+/* ============================================================
+   Dates — Torn City Time is UTC
+   ============================================================ */
+function toTs(dateStr, endOfDay) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d, endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0) / 1000);
+}
+const isoUTC = (d) => d.toISOString().slice(0, 10);
+
+function setPreset(months, ytd) {
+  const now = new Date();
+  $("to").value = isoUTC(now);
+  if (ytd) $("from").value = `${now.getUTCFullYear()}-01-01`;
+  else {
+    const s = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, now.getUTCDate()));
+    $("from").value = isoUTC(s);
+  }
+}
+
+/* ============================================================
+   Run
+   ============================================================ */
+function say(msg, pct, p = "") {
+  $(p + "status").classList.add("on");
+  $(p + "statustext").textContent = msg;
+  if (pct != null) $(p + "barfill").style.width = Math.max(0, Math.min(100, pct)) + "%";
+}
+function fail(msg, p = "") {
+  $(p + "err").classList.add("on");
+  $(p + "err").innerHTML = `<b>Could not build the report.</b> ${esc(msg)}`;
+}
+
+async function run() {
+  const key = $("key").value.trim();
+  const fromStr = $("from").value, toStr = $("to").value;
+
+  $("err").classList.remove("on");
+  if (!key) return fail("Enter your Torn API key.");
+  if (!fromStr || !toStr) return fail("Pick both a start and an end date.");
+  const from = toTs(fromStr, false), to = toTs(toStr, true);
+  if (from > to) return fail("The start date is after the end date.");
+
+  rememberKeys();
+
+  $("go").disabled = true;
+  CALLS = 0;
+  RATE.onWait = (secs, why) => say(`Waiting ${secs}s — ${why} (Torn allows ~100 calls/min per key).`, null);
+
+  try {
+    say("Reading completed crimes…", 4);
+    const completed = await fetchCrimes("completed", from, to, key, (cat, n, page) => {
+      say(`Reading completed crimes… ${fmtInt(n)} so far (page ${page})`, 4 + Math.min(55, page * 5));
+    });
+
+    say(`Read ${fmtInt(completed.length)} completed. Reading expired crimes…`, 62);
+    const expired = await fetchCrimes("expired", from, to, key, (cat, n, page) => {
+      say(`Reading expired crimes… ${fmtInt(n)} so far (page ${page})`, 62 + Math.min(18, page * 4));
+    });
+
+    const crimes = completed.concat(expired);
+
+    // Every item id we need a price for: slot outcomes and item rewards.
+    const ids = new Set();
+    for (const c of crimes) {
+      for (const slot of c.slots || []) {
+        const io = slot.user && slot.user.item_outcome;
+        if (io && io.item_id) ids.add(io.item_id);
+      }
+      for (const ir of (c.rewards && c.rewards.items) || []) if (ir.id) ids.add(ir.id);
+    }
+
+    say(`Pricing ${fmtInt(ids.size)} distinct items…`, 84);
+    const prices = ids.size ? await fetchPrices(ids, key, () => {}) : new Map();
+
+    say("Aggregating…", 95);
+    const { rows, total } = aggregate(crimes, prices);
+
+    STATE = {
+      rows, total, prices,
+      open: new Set(),
+      sort: { key: null, dir: -1 },
+      meta: {
+        fromLabel: fromStr, toLabel: toStr, calls: CALLS,
+        nCompleted: completed.length, nExpired: expired.length,
+      },
+    };
+
+    $("expandall").textContent = "Expand all";
+    resetCuts();
+    renderTiles();
+    renderTable();
+    $("results").classList.add("on");
+    say(`Done — ${fmtInt(crimes.length)} crimes across ${fmtInt(rows.length)} level(s), ${fmtInt(CALLS)} API calls.`, 100);
+  } catch (e) {
+    fail(e.message || String(e));
+    say("Stopped.", 0);
+  } finally {
+    RATE.onWait = null;
+    $("go").disabled = false;
+  }
+}
+
+/* ============================================================
+   Tab 2 — CPR vs account age
+   ============================================================ */
+
+/* TornStats reports CPR per role within a scenario, but the question is asked
+   per crime LEVEL, so scenario names have to be mapped to a difficulty. This
+   table was read off the faction's own crime history; anything the live crimes
+   endpoint reports overrides it, and anything in neither is surfaced as
+   unmapped rather than silently dropped. */
+const SCENARIO_LEVEL = {
+  "First Aid and Abet": 1, "Mob Mentality": 1, "Pet Project": 1,
+  "Best of the Lot": 2, "Cash Me if You Can": 2, "Thou Shalt Not Steal": 2,
+  "Gaslight the Way": 3, "Market Forces": 3, "Smoke and Wing Mirrors": 3,
+  "Plucking the Lotus Petal": 4, "Snow Blind": 4, "Stage Fright": 4,
+  "Counter Offer": 5, "Guardian Ángels": 5, "Honey Trap": 5, "No Reserve": 5,
+  "Bidding War": 6, "Dish It Out": 6, "Leave No Trace": 6, "Sneaky Git Grab": 6,
+  "Blast from the Past": 7, "Cleared for Takeoff": 7, "Window of Opportunity": 7,
+  "Break the Bank": 8, "Clinical Precision": 8, "Lock Stock": 8,
+  "Ship Happens": 8, "Stacking the Deck": 8,
+  "Ace in the Hole": 9, "Hostile Takeover": 9,
+};
+
+const DEFAULT_CPR = 65;
+const LEVEL_CPR_OVERRIDE = { 8: 60 };
+const defaultThreshold = (lvl) => LEVEL_CPR_OVERRIDE[lvl] ?? DEFAULT_CPR;
+const barFor = (lvl) => CPR.thresholds.get(lvl) ?? defaultThreshold(lvl);
+
+let CPR = { byMember: new Map(), ages: new Map(), scenariosByLevel: new Map(),
+            unmapped: [], thresholds: new Map(), meta: null };
+
+async function fetchCPR(tsKey) {
+  const url = `https://www.tornstats.com/api/v2/${encodeURIComponent(tsKey)}/faction/cpr`;
+  let res, body;
+  try {
+    res = await fetch(url, { headers: { Accept: "application/json" } });
+  } catch (e) {
+    throw new Error(
+      "Could not reach tornstats.com. It does not send permissive CORS headers for every " +
+      "deployment, so a browser may block this call even when the URL works in a new tab — " +
+      "open the URL directly to check, and see the note at the bottom of this tab."
+    );
+  }
+  try { body = await res.json(); }
+  catch (e) { throw new Error(`TornStats returned a non-JSON response (HTTP ${res.status}). The key may be wrong.`); }
+
+  if (!body || body.status === false || !body.members) {
+    const msg = String((body && body.message) || `HTTP ${res.status}`).replace(/\.*$/, "");
+    throw new Error(
+      `TornStats said: ${msg}. A Torn API key only works here once its owner has signed in to ` +
+      `tornstats.com at least once and let it register the key.`
+    );
+  }
+  return body.members;
+}
+
+/* Collapse the raw payload to, per member, the best CPR they hold in each
+   scenario — keyed by level. Per-SCENARIO bests are what the "every scenario
+   at the next level" test needs, so this deliberately does not flatten all
+   the way down to one number per level.
+
+   The scenario list per level is the union actually seen in the CPR data,
+   not the built-in table: a scenario TornStats never reports would otherwise
+   make the "every scenario" test unpassable for everyone. */
+function foldCpr(raw, levelOf) {
+  const byMember = new Map();
+  const scenariosByLevel = new Map();
+  const unmapped = new Set();
+
+  for (const [idStr, scenarios] of Object.entries(raw)) {
+    const id = Number(idStr);
+    if (!Number.isFinite(id)) continue;
+    const perLevel = new Map();                 // level -> Map(scenario -> best role CPR)
+
+    for (const [scenario, roles] of Object.entries(scenarios || {})) {
+      const lvl = levelOf(scenario);
+      if (lvl == null) { unmapped.add(scenario); continue; }
+      if (!scenariosByLevel.has(lvl)) scenariosByLevel.set(lvl, new Set());
+      scenariosByLevel.get(lvl).add(scenario);
+
+      let best = -Infinity;
+      for (const v of Object.values(roles || {})) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n > best) best = n;
+      }
+      if (best === -Infinity) continue;
+      if (!perLevel.has(lvl)) perLevel.set(lvl, new Map());
+      perLevel.get(lvl).set(scenario, best);
+    }
+    byMember.set(id, perLevel);
+  }
+  return { byMember, scenariosByLevel, unmapped: [...unmapped].sort() };
+}
+
+/* Best CPR this member holds anywhere at a level. */
+function bestAtLevel(perLevel, lvl) {
+  const m = perLevel.get(lvl);
+  if (!m) return null;
+  let b = -Infinity;
+  for (const v of m.values()) if (v > b) b = v;
+  return b === -Infinity ? null : b;
+}
+
+/* "Can do something at this level": at least one role, in at least one
+   scenario, at or above the bar. */
+function meetsLevel(perLevel, lvl) {
+  const b = bestAtLevel(perLevel, lvl);
+  return b != null && b >= barFor(lvl);
+}
+
+/* Which scenarios at a level this member falls short in. [] means covered;
+   null means the level has no scenarios in the data at all.
+
+   A scenario the member has no CPR row for is treated as covered: TornStats
+   only reports scenarios a player has actually been in, so an absent row says
+   nothing about whether they could fill it, and counting it against them lets
+   one rarely-run scenario hold back the entire roster. */
+function coverGaps(perLevel, lvl) {
+  const scens = CPR.scenariosByLevel.get(lvl);
+  if (!scens || !scens.size) return null;
+  const bar = barFor(lvl);
+  const mine = perLevel.get(lvl) || new Map();
+  const gaps = [];
+  for (const s of scens) {
+    const v = mine.get(s);
+    if (v != null && v < bar) gaps.push({ scenario: s, cpr: v });
+  }
+  return gaps;
+}
+
+/* "Covered across the whole level": no gaps. */
+function coversWholeLevel(perLevel, lvl) {
+  const gaps = coverGaps(perLevel, lvl);
+  if (gaps === null) return false;
+  return gaps.length === 0;
+}
+
+/* The bucket for a level: meets the bar here, but is NOT covered across every
+   scenario one level up. The top level has no level above it, so nothing is
+   excluded there. */
+function qualifiers(lvl) {
+  const next = lvl + 1;
+  const hasNext = (CPR.scenariosByLevel.get(next) || new Set()).size > 0;
+  const meets = [], list = [];
+
+  for (const [id, perLevel] of CPR.byMember) {
+    if (!meetsLevel(perLevel, lvl)) continue;
+    meets.push(id);
+    const gaps = hasNext ? (coverGaps(perLevel, next) || []) : [];
+    if (hasNext && gaps.length === 0) continue;                  // covered at the next level, belongs higher up
+    const a = CPR.ages.get(id);
+    if (!a) continue;                                            // no age -> cannot be averaged
+    list.push({ id, age: a.age, name: a.name, cpr: bestAtLevel(perLevel, lvl), gaps });
+  }
+  list.sort((x, y) => x.age - y.age);
+  return { bar: barFor(lvl), meets: meets.length, list, hasNext,
+           nextScenarios: (CPR.scenariosByLevel.get(next) || new Set()).size };
+}
+
+function levelsPresent() {
+  return [...CPR.scenariosByLevel.keys()].sort((a, b) => a - b);
+}
+
+async function runCPR() {
+  const key = $("key").value.trim();
+  const tsKey = $("tskey").value.trim() || key;
+
+  $("cprerr").classList.remove("on");
+  if (!key) return fail("Enter your Torn API key at the top of the page.", "cpr");
+
+  $("gocpr").disabled = true;
+  CALLS = 0;
+  RATE.onWait = (secs, why) => say(`Waiting ${secs}s — ${why} (Torn allows ~100 calls/min per key).`, null, "cpr");
+
+  try {
+    say("Reading CPR from TornStats…", 4, "cpr");
+    const rawCpr = await fetchCPR(tsKey);
+
+    say("Reading faction members…", 12, "cpr");
+    const memberBody = await apiGet("/faction/members", {}, key);
+    const roster = new Map((memberBody.members || []).map((m) => [m.id, m]));
+
+    // Prefer levels observed live; fall back to the built-in table.
+    const live = {};
+    for (const L of STATE.rows || []) for (const sc of L.scenarioList) live[sc.name] = L.level;
+    const levelOf = (name) => live[name] ?? SCENARIO_LEVEL[name] ?? null;
+
+    const { byMember, scenariosByLevel, unmapped } = foldCpr(rawCpr, levelOf);
+
+    const activeOnly = $("activeonly").checked;
+    const wanted = [...byMember.keys()].filter((id) => !activeOnly || roster.has(id));
+    if (!wanted.length) throw new Error("TornStats returned CPR data, but none of those players are in the faction roster.");
+
+    // Account age needs one profile call each: /user/{ids}/basic silently
+    // ignores extra ids and answers with the key owner's own profile, and
+    // /basic carries no age field at all — only /profile does.
+    const ages = new Map();
+    const skipped = [];
+    for (let i = 0; i < wanted.length; i++) {
+      const id = wanted[i];
+      const pct = 16 + Math.round((i / wanted.length) * 80);
+      say(`Reading account ages… ${i + 1} of ${wanted.length}`, pct, "cpr");
+      try {
+        const body = await apiGet(`/user/${id}/profile`, {}, key);
+        const prof = body.profile || body;
+        if (Number.isFinite(prof.age)) {
+          ages.set(id, { age: prof.age, name: prof.name || (roster.get(id) || {}).name || String(id) });
+        } else {
+          skipped.push({ id, why: "no age field in the profile" });
+        }
+      } catch (e) {
+        // One unreadable player must not cost us the other ninety-five.
+        // TornStats keeps CPR history for people who have since left or
+        // deleted, so a rejected id here is expected, not exceptional.
+        // Key-level failures are different: every later call would fail too.
+        if (FATAL_CODES.test(e.message || "")) throw e;
+        skipped.push({ id, why: (e.message || "unreadable").replace(/^Torn API error \d+: /, "") });
+      }
+    }
+
+    CPR = {
+      byMember, ages, roster, scenariosByLevel, unmapped,
+      thresholds: new Map(),
+      meta: { members: wanted.length, inRoster: wanted.filter((id) => roster.has(id)).length,
+              calls: CALLS, activeOnly, rateHits: RATE.hits, skipped },
+    };
+    // only the members we actually kept
+    for (const id of [...byMember.keys()]) if (!wanted.includes(id)) byMember.delete(id);
+    for (const lvl of levelsPresent()) CPR.thresholds.set(lvl, defaultThreshold(lvl));
+
+    renderCPR();
+    $("cprresults").classList.add("on");
+    say(`Done — ${fmtInt(wanted.length)} members across ${fmtInt(levelsPresent().length)} level(s), ${fmtInt(CALLS)} API calls.`, 100, "cpr");
+  } catch (e) {
+    fail(e.message || String(e), "cpr");
+    say("Stopped.", 0, "cpr");
+  } finally {
+    RATE.onWait = null;
+    $("gocpr").disabled = false;
+  }
+}
+
+const CPR_COLS = ["Level", "CPR bar", "Meets level", "Not covered at next", "Median age",
+                  "Lowest age", "Spread", "Youngest", "Oldest"];
+
+/* Median of an already-ascending list of ages. */
+function median(sorted) {
+  const n = sorted.length;
+  if (!n) return null;
+  const mid = n >> 1;
+  return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function renderCPR() {
+  const levels = levelsPresent();
+  $("cprthr").innerHTML = CPR_COLS.map((t, i) => {
+    const tip = i === 2 ? "At least one role at or above the bar, in at least one scenario at this level."
+      : i === 3 ? "Of those, the ones NOT holding a role at or above the bar in every scenario one level up. These are the players the age figures describe."
+      : i === 4 ? "Middle account age of that group — less swayed by one very old or very new member than a mean."
+      : "";
+    return `<th class="${i === 0 ? "name" : ""}"${tip ? ` title="${esc(tip)}"` : ""}>${esc(t)}</th>`;
+  }).join("");
+
+  const rows = levels.map((lvl) => ({ lvl, ...qualifiers(lvl) }));
+  const maxAge = Math.max(1, ...rows.flatMap((r) => r.list.map((x) => x.age)));
+
+  $("cprtb").innerHTML = rows.map(({ lvl, bar, meets, list, hasNext, nextScenarios }) => {
+    const head = `<td class="name">Level ${lvl}</td>
+      <td class="thresh"><input type="number" min="0" max="100" value="${bar}" data-lvl="${lvl}" /></td>
+      <td>${meets ? fmtInt(meets) : '<span class="dim">0</span>'}</td>`;
+    const n = list.length;
+    if (!n) {
+      const why = !meets ? "no member meets this bar"
+        : hasNext ? `all ${fmtInt(meets)} are covered across level ${lvl + 1}`
+        : "no ages available";
+      return `<tr>${head}<td><span class="dim">0</span></td><td colspan="5"><span class="dim">${esc(why)}</span></td></tr>`;
+    }
+    const ages = list.map((x) => x.age);
+    const min = ages[0], max = ages[n - 1];
+    const med = median(ages);
+    const pc = (v) => (v / maxAge) * 100;
+    const nextNote = hasNext ? `level ${lvl + 1} has ${nextScenarios} scenario(s) in the CPR data` : "top level — nothing excluded";
+    const whyIn = (x) => {
+      if (!x.gaps || !x.gaps.length) return "";
+      const txt = x.gaps.map((g) => `${g.scenario}: ${g.cpr == null ? "no CPR data" : g.cpr}`).join("\n");
+      return ` title="${esc(`Short at level ${lvl + 1} in:\n${txt}`)}"`;
+    };
+    return `<tr>${head}
+      <td title="${esc(nextNote)}">${fmtInt(n)}</td>
+      <td>${fmtInt(Math.round(med))}</td>
+      <td>${fmtInt(min)}</td>
+      <td><div class="range" title="${fmtInt(min)} – ${fmtInt(max)} days, median ${fmtInt(Math.round(med))}">
+        <i style="left:${pc(min).toFixed(2)}%;width:${Math.max(1.2, pc(max) - pc(min)).toFixed(2)}%"></i>
+        <b style="left:${pc(med).toFixed(2)}%"></b></div></td>
+      <td class="name"${whyIn(list[0])}>${esc(list[0].name)} <span class="dim">· ${fmtInt(min)}d</span></td>
+      <td class="name"${whyIn(list[n - 1])}>${esc(list[n - 1].name)} <span class="dim">· ${fmtInt(max)}d</span></td>
+    </tr>`;
+  }).join("");
+
+  $("cpremptymsg").style.display = levels.length ? "none" : "block";
+  renderCprTiles(rows);
+  renderCprNotes();
+}
+
+function renderCprTiles(rows) {
+  const all = [...CPR.ages.values()].map((a) => a.age).sort((a, b) => a - b);
+  const medAll = median(all) || 0;
+  const bucketed = rows.reduce((set, r) => { r.list.forEach((x) => set.add(x.id)); return set; }, new Set());
+  const topHeavy = rows.length ? rows[rows.length - 1] : null;
+  const tiles = [
+    { k: "Members with CPR data", v: fmtInt(CPR.byMember.size),
+      d: `${fmtInt(CPR.ages.size)} with an account age read` },
+    { k: "Placed in a bucket", v: fmtInt(bucketed.size),
+      d: `across ${fmtInt(rows.length)} level(s)` },
+    { k: "Median age, whole group", v: fmtInt(Math.round(medAll)) + "d",
+      d: all.length ? `${fmtInt(all[0])} – ${fmtInt(all[all.length - 1])} days` : "—" },
+    { k: "Top bucket", v: topHeavy ? `L${topHeavy.lvl} · ${fmtInt(topHeavy.list.length)}` : "—",
+      d: `bar ${DEFAULT_CPR}+, level 8 uses ${LEVEL_CPR_OVERRIDE[8]}+` },
+  ];
+  $("cprtiles").innerHTML = tiles.map((x) =>
+    `<div class="tile"><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div><div class="d">${esc(x.d)}</div></div>`).join("");
+}
+
+function renderCprNotes() {
+  $("cprnotes").innerHTML = `<h3>Reading this table</h3><ul>
+    <li><b>Who a level counts</b> — a player appears at level N when they have <b>${DEFAULT_CPR}+ on at least one role
+        in at least one scenario at level N</b>, and are <b>not</b> yet at ${DEFAULT_CPR}+ in every scenario at level
+        N+1. So: already usable at this level, not yet covering the whole of the level above. The ages describe that
+        group — the <b>Not covered at next</b> column.</li>
+    <li><b>Levels are not mutually exclusive</b> — the test is applied independently per level, so one player can
+        appear in more than one row. These are the people sitting at each level's edge, not a split of the faction.</li>
+  </ul>`;
+}
+
+function cprCSV() {
+  const q = (v) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const lines = ["# Torn CPR vs account age",
+    "# A level counts players who meet its bar but are NOT covered across every scenario at the next level."];
+  lines.push(CPR_COLS.map(q).join(","));
+  for (const lvl of levelsPresent()) {
+    const { bar, meets, list } = qualifiers(lvl);
+    if (!list.length) { lines.push([lvl, bar, meets, 0, "", "", "", "", ""].map(q).join(",")); continue; }
+    const ages = list.map((x) => x.age);
+    lines.push([lvl, bar, meets, list.length, Math.round(median(ages)), ages[0], "",
+      list[0].name, list[list.length - 1].name].map(q).join(","));
+  }
+  lines.push("");
+  lines.push(["Level", "CPR bar", "Member", "Torn ID", "Best CPR at level", "Account age (days)",
+              "Short at next level in"].map(q).join(","));
+  for (const lvl of levelsPresent()) {
+    const { bar, list } = qualifiers(lvl);
+    for (const x of list) {
+      const gaps = (x.gaps || []).map((g) => `${g.scenario}=${g.cpr == null ? "no data" : g.cpr}`).join("; ");
+      lines.push([lvl, bar, x.name, x.id, x.cpr, x.age, gaps].map(q).join(","));
+    }
+  }
+  return lines.join("\n");
+}
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+$("go").addEventListener("click", run);
+
+/* ---- tabs ---- */
+const SUBTITLE = {
+  report: "Per-level and per-scenario breakdown of completed &amp; expired OCs: success rate, expiry rate, consumed-item cost, and the money the faction retained.",
+  cpr: "For each crime level, the account age of players who can already be slotted there but are not yet covered across every scenario one level up.",
+};
+for (const tab of document.querySelectorAll(".tab")) {
+  tab.addEventListener("click", () => {
+    for (const t of document.querySelectorAll(".tab")) {
+      const on = t === tab;
+      t.classList.toggle("on", on);
+      t.setAttribute("aria-selected", String(on));
+    }
+    for (const pane of document.querySelectorAll(".panel")) {
+      pane.classList.toggle("on", pane.id === "panel-" + tab.dataset.tab);
+    }
+    $("sub").innerHTML = SUBTITLE[tab.dataset.tab];
+  });
+}
+
+/* ---- CPR tab ---- */
+$("gocpr").addEventListener("click", runCPR);
+$("cprtb").addEventListener("input", (e) => {
+  const input = e.target.closest("input[data-lvl]");
+  if (!input) return;
+  const lvl = Number(input.dataset.lvl);
+  const v = Number(input.value);
+  CPR.thresholds.set(lvl, Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : defaultThreshold(lvl));
+  // Re-render from the row up, so the focused input keeps its caret.
+  const focus = document.activeElement === input ? lvl : null;
+  renderCPR();
+  if (focus != null) {
+    const again = $("cprtb").querySelector(`input[data-lvl="${focus}"]`);
+    if (again) { again.focus(); again.select(); }
+  }
+});
+$("cprreset").addEventListener("click", () => {
+  for (const lvl of CPR.thresholds.keys()) CPR.thresholds.set(lvl, defaultThreshold(lvl));
+  renderCPR();
+});
+$("cprcsv").addEventListener("click", () => {
+  const blob = new Blob([cprCSV()], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "torn-cpr-by-age.csv";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+for (const b of document.querySelectorAll(".presets [data-months], .presets [data-ytd]")) {
+  b.addEventListener("click", () => setPreset(Number(b.dataset.months || 0), !!b.dataset.ytd));
+}
+
+$("detail").addEventListener("change", renderTable);
+$("flat").addEventListener("change", renderTable);
+$("whatif").addEventListener("change", () => { renderTiles(); renderTable(); });
+
+/* Editing a level's cut: recompute without losing the caret. */
+$("tb").addEventListener("input", (e) => {
+  const input = e.target.closest("input[data-cut]");
+  if (!input) return;
+  const lvl = Number(input.dataset.cut);
+  const raw = input.value.trim();
+  if (raw === "") CUTS.delete(lvl);                      // blank = fall back to actual
+  else {
+    const v = Number(raw);
+    if (Number.isFinite(v)) CUTS.set(lvl, Math.max(0, Math.min(100, v)));
+  }
+  const caret = input.selectionStart;
+  renderTiles();
+  renderTable();
+  const again = $("tb").querySelector(`input[data-cut="${lvl}"]`);
+  if (again) { again.focus(); try { again.setSelectionRange(caret, caret); } catch (_) {} }
+});
+
+$("cutapply").addEventListener("click", () => {
+  const v = Number($("cutall").value);
+  if (!Number.isFinite(v)) return;
+  const c = Math.max(0, Math.min(100, v));
+  for (const L of STATE.rows || []) CUTS.set(L.level, c);
+  renderTiles();
+  renderTable();
+});
+$("cutreset").addEventListener("click", () => {
+  resetCuts();
+  $("cutall").value = "";
+  renderTiles();
+  renderTable();
+});
+
+$("expandall").addEventListener("click", () => {
+  const allOpen = STATE.rows.length && STATE.rows.every((L) => STATE.open.has(L.level));
+  STATE.open = allOpen ? new Set() : new Set(STATE.rows.map((L) => L.level));
+  $("expandall").textContent = allOpen ? "Expand all" : "Collapse all";
+  renderTable();
+});
+
+$("tb").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr.lvl");
+  if (!tr || $("flat").checked) return;
+  const lvl = Number(tr.dataset.level);
+  if (STATE.open.has(lvl)) STATE.open.delete(lvl); else STATE.open.add(lvl);
+  renderTable();
+});
+
+$("thr").addEventListener("click", (e) => {
+  const th = e.target.closest("th");
+  if (!th) return;
+  const k = th.dataset.k;
+  if (STATE.sort.key === k) STATE.sort.dir *= -1;
+  else STATE.sort = { key: k, dir: k === "name" ? 1 : -1 };
+  renderTable();
+});
+
+$("csv").addEventListener("click", () => {
+  const blob = new Blob([toCSV()], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `torn-oc-${STATE.meta.fromLabel}_to_${STATE.meta.toLabel}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+function rememberKeys() {
+  if ($("remember").checked) {
+    localStorage.setItem("torn_oc_key", $("key").value.trim());
+    localStorage.setItem("torn_ts_key", $("tskey").value.trim());
+  } else {
+    localStorage.removeItem("torn_oc_key");
+    localStorage.removeItem("torn_ts_key");
+  }
+}
+$("remember").addEventListener("change", rememberKeys);
+
+// Boot
+setPreset(12);
+const saved = localStorage.getItem("torn_oc_key");
+if (saved) {
+  $("key").value = saved;
+  $("tskey").value = localStorage.getItem("torn_ts_key") || "";
+  $("remember").checked = true;
+}
+</script>
+</body>
+</html>
