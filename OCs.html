@@ -578,7 +578,7 @@ function blank() {
     crimes: 0, succ: 0, fail: 0, expired: 0,
     usedN: 0, usedCost: 0, usedCostFaction: 0, usedCostMember: 0,
     gross: 0, paidOut: 0, cashKept: 0,
-    itemRewardValue: 0,
+    itemRewardValue: 0, itemKept: 0,
   };
 }
 
@@ -607,21 +607,31 @@ function accumulate(b, c, prices) {
   const money = r.money || 0;
   b.gross += money;
 
+  let itemValue = 0;
   for (const ir of r.items || []) {
     const price = (prices.get(ir.id) || {}).reward || 0;
     // quantity is genuinely 0 on some rows — an item listed as a possible
     // reward that wasn't actually awarded. `?? 1` so a real 0 survives.
-    b.itemRewardValue += price * (ir.quantity ?? 1);
+    itemValue += price * (ir.quantity ?? 1);
   }
+  b.itemRewardValue += itemValue;
 
+  /* A crime paid in items still has a payout percentage, and members are still
+     owed that share of it — every item-reward crime in this faction's history
+     carries one. So the split applies to the valued items exactly as it does to
+     cash. Torn records no cash figure for those crimes (money is 0) and the
+     payout carries only a percentage, never an amount, so the valued items are
+     the only base available. */
   const payout = r.payout;
   if (!payout) {
     // Nothing has been distributed yet: the faction still holds all of it.
     b.cashKept += money;
+    b.itemKept += itemValue;
   } else {
     const pct = payout.percentage || 0;
-    b.paidOut += money * (pct / 100);
+    b.paidOut += (money + itemValue) * (pct / 100);
     b.cashKept += money * (1 - pct / 100);
+    b.itemKept += itemValue * (1 - pct / 100);
   }
 }
 
@@ -656,7 +666,10 @@ const expiredRate = (s) => (s.crimes ? (s.expired / s.crimes) * 100 : null);
 /* What the faction ended up with: the cash it did not pay out, plus the
    items it was paid in. The payout percentage splits cash only — item
    rewards go to the armoury, so the faction keeps all of their value. */
-const kept = (s) => s.cashKept + s.itemRewardValue;
+const kept = (s) => s.cashKept + s.itemKept;
+/* Everything the crime was worth, cash and valued items together — the base the
+   payout percentage is applied to. */
+const rewardBase = (s) => s.gross + s.itemRewardValue;
 const netToFaction = (s) => kept(s) - s.usedCostFaction;
 
 /* ---- what-if: a different faction cut, per level ----------------------
@@ -665,15 +678,15 @@ const netToFaction = (s) => kept(s) - s.usedCostFaction;
    starts at the cut that level actually ran at, so the simulation opens on
    reality and any edit shows as a clean delta.
 
-   Only the CASH half moves. Item rewards are not split by the payout
-   percentage, so they ride along unchanged into the simulated total. */
+   The cut applies to the whole reward base — cash and valued items alike,
+   since members are paid a share of item rewards too. */
 /* A level is only in CUTS once the user has actually typed a cut for it.
    Absent means "use what really happened", exactly — seeding the map with a
    rounded version of the real cut would open the panel on a delta of millions
    that is pure rounding error. */
 let CUTS = new Map();   // level -> faction cut %, overriding what actually happened
 
-const actualCutPct = (s) => (s && s.gross > 0 ? (s.cashKept / s.gross) * 100 : null);
+const actualCutPct = (s) => (s && rewardBase(s) > 0 ? (kept(s) / rewardBase(s)) * 100 : null);
 const levelStatsOf = (lvl) => ((STATE.rows || []).find((L) => L.level === lvl) || {}).stats || null;
 const cutFor = (lvl) => (lvl == null ? null : CUTS.get(lvl));
 
@@ -685,21 +698,17 @@ function displayCut(lvl) {
   return a == null ? null : Math.round(a * 10) / 10;
 }
 
-function simCashKept(s, lvl) {
-  if (lvl == null || !CUTS.has(lvl)) return s.cashKept;   // untouched -> exact actual
-  return s.gross * (CUTS.get(lvl) / 100);
+function simKept(s, lvl) {
+  if (lvl == null || !CUTS.has(lvl)) return kept(s);      // untouched -> exact actual
+  return rewardBase(s) * (CUTS.get(lvl) / 100);
 }
-const simKept = (s, lvl) => simCashKept(s, lvl) + s.itemRewardValue;
 
 /* The total row spans every level, so it has to be re-summed per level
    rather than read off STATE.total. */
 function simTotal() {
-  let cash = 0, items = 0;
-  for (const L of STATE.rows || []) {
-    cash += simCashKept(L.stats, L.level);
-    items += L.stats.itemRewardValue;
-  }
-  return { cashKept: cash, kept: cash + items };
+  let total = 0;
+  for (const L of STATE.rows || []) total += simKept(L.stats, L.level);
+  return { kept: total };
 }
 
 function resetCuts() { CUTS = new Map(); }
@@ -724,15 +733,17 @@ const COLS = [
     title: "Consumed items that came out of the faction armoury." },
   { k: "usedCostMember",  t: "— member-owned",  get: (r) => r.stats.usedCostMember,  kind: "money", detail: true,
     title: "Consumed items supplied by members out of pocket." },
-  { k: "gross",     t: "Money (gross)", get: (r) => r.stats.gross,    kind: "money", detail: true },
+  { k: "gross",     t: "Cash (gross)", get: (r) => r.stats.gross,    kind: "money", detail: true },
+  { k: "itemRewardValue", t: "Item rewards (gross)", get: (r) => r.stats.itemRewardValue, kind: "money", detail: true,
+    title: "Full value of item rewards, at shop sell price (market price where no shop buys them). A gross figure — members are paid a share of it." },
   { k: "paidOut",   t: "Paid to members", get: (r) => r.stats.paidOut, kind: "money", detail: true,
-    title: "Gross × payout percentage." },
+    title: "(cash + item value) × payout percentage." },
   { k: "kept",      t: "Faction kept", get: (r) => kept(r.stats),     kind: "money",
-    title: "Cash the faction did not pay out, plus the value of item rewards." },
-  { k: "cashKept",  t: "— cash", get: (r) => r.stats.cashKept, kind: "money", detail: true,
-    title: "Gross × (1 − payout %) — the cash share not paid out to members." },
-  { k: "itemRewardValue", t: "— item rewards", get: (r) => r.stats.itemRewardValue, kind: "money", detail: true,
-    title: "Item rewards at shop sell price (market price where no shop buys them). Not subject to the payout split." },
+    title: "The share of cash and item value the faction did not pay out." },
+  { k: "cashKept",  t: "— from cash", get: (r) => r.stats.cashKept, kind: "money", detail: true,
+    title: "Cash × (1 − payout %)." },
+  { k: "itemKept",  t: "— from items", get: (r) => r.stats.itemKept, kind: "money", detail: true,
+    title: "Item value × (1 − payout %). Item-reward crimes carry a payout percentage too, so members are owed a share of these." },
   { k: "net",       t: "Net of faction items", get: (r) => netToFaction(r.stats), kind: "money", detail: true,
     title: "Faction kept − cost of faction-owned items consumed." },
 
@@ -777,7 +788,7 @@ function renderTiles() {
     { k: "Item cost (used)", v: "$" + moneyShort(t.usedCost),
       d: `${fmtInt(t.usedN)} consumed · $${moneyShort(t.usedCostFaction)} from armoury` },
     { k: "Faction kept", v: "$" + moneyShort(kept(t)),
-      d: `$${moneyShort(t.cashKept)} cash + $${moneyShort(t.itemRewardValue)} items` },
+      d: `$${moneyShort(t.cashKept)} from cash + $${moneyShort(t.itemKept)} from items` },
   ];
   if ($("whatif").checked && (STATE.rows || []).length) {
     const sim = simTotal();
