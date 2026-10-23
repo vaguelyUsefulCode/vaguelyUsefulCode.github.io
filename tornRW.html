@@ -782,6 +782,54 @@ tr.first-acquisition td:first-child{box-shadow:inset 3px 0 0 var(--accent2)}
 .pnl-value{font-weight:650;font-variant-numeric:tabular-nums}
 .pnl-value.is-loss{color:var(--danger)}
 .pnl-excluded{color:var(--muted);font-size:11px;font-style:italic}
+.saved-data{margin:4px 0 10px;color:var(--muted);font-size:12px}
+.saved-data summary{cursor:pointer;width:max-content}
+.saved-data-panel{
+  margin-top:8px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--panel);
+  display:grid;
+  gap:8px;
+  max-width:640px;
+}
+.saved-owner{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.saved-owner-name{color:var(--text)}
+.saved-owner-detail{display:block;color:var(--muted);font-size:11px}
+.forget-owner{
+  flex:0 0 auto;
+  padding:4px 10px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:transparent;
+  color:var(--text);
+  font-size:12px;
+  cursor:pointer;
+}
+.forget-owner:hover{border-color:var(--danger);color:var(--danger)}
+.saved-owner-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.owner-action{
+  padding:4px 10px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:transparent;
+  color:var(--text);
+  font-size:12px;
+  cursor:pointer;
+}
+.owner-action:hover{border-color:var(--accent)}
+.saved-owner.is-aside .saved-owner-name{color:var(--muted)}
+.aside-tag{
+  margin-left:6px;
+  padding:1px 6px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.saved-data-import{padding-top:4px;border-top:1px solid var(--border)}
 .profit-estimate{color:var(--muted);font-style:italic}
 .bb-note{display:block;color:var(--muted);font-size:10px;letter-spacing:.04em}
 .bb-split{
@@ -834,6 +882,12 @@ tr.hidden-row td{background:#1c1a14}
     </div>
     <button id="addKeyBtn" class="add-key" type="button">Add another key</button>
   </div>
+
+  <details class="saved-data" id="savedData">
+    <summary>Saved data</summary>
+    <div class="saved-data-panel" id="savedDataPanel"></div>
+    <input type="file" id="importOwnerFile" accept="application/json,.json" hidden>
+  </details>
   <div id="status" class="status"></div>
 
   <div id="tabs" class="tabs"></div>
@@ -897,6 +951,10 @@ const BUNKER_RATES = {
   "heavy artillery": { yellow: 14, orange: 42, orange2: 63,   red: 126, red2: 189 }
 };
 
+// The rarities this tool is about. White equipment is ordinary stock and is
+// left out of every table.
+const QUALIFYING_RARITIES = new Set(["yellow", "orange", "red"]);
+
 const BUNKER_PARTY = "Big Al's Bunker";
 
 // Cache item id -> what it costs in Bunker Bucks.
@@ -956,6 +1014,8 @@ const state = {
   keyHolderIds: null,
   loadChain: null,
   loadBusy: false,
+  // ownerId -> that account's fact store, for the tables that span accounts.
+  factStores: new Map(),
   // Which manual market price is open for editing, if any.
   editingMarketPrice: null,
   // Same, for a transaction price on the RW Inventory tab.
@@ -1156,6 +1216,27 @@ function setLoadingUi(busy) {
 function activeRaw() {
   if (!state.raw) state.raw = emptyRawStore();
   return state.raw;
+}
+
+// The fact stores of every account currently in play. Facts are recorded into
+// state.raw, the owner being loaded; they are read back from all of them.
+function loadedFactStores() {
+  const stores = [];
+  for (const id of state.loadedOwners.keys()) {
+    const store = state.factStores.get(String(id));
+    if (store) stores.push(store);
+  }
+  if (!stores.length && state.raw) stores.push(state.raw);
+  return stores;
+}
+
+function factLogEntries(logId) {
+  const id = String(logId);
+  return loadedFactStores().flatMap(raw => Object.values(raw.logEntries?.[id] || {}));
+}
+
+function factTrades() {
+  return loadedFactStores().flatMap(raw => Object.values(raw.trades || {}));
 }
 
 function emptyRawStore() {
@@ -1364,6 +1445,21 @@ async function getAllOwnerCaches() {
   }
 }
 
+async function deleteOwnerCache(ownerId) {
+  const db = await openCacheDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(CACHE_STORE, "readwrite");
+      tx.objectStore(CACHE_STORE).delete(String(ownerId));
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
 async function putOwnerCache(record) {
   const db = await openCacheDb();
   try {
@@ -1377,6 +1473,130 @@ async function putOwnerCache(record) {
   } finally {
     db.close();
   }
+}
+
+// Forgetting one account.
+//
+// The facts live in that owner's own record, so the record goes. What is keyed
+// by row rather than by owner - hand-typed prices, loans marked settled - is
+// prefixed with the owner id and goes with it. What is keyed by UID - a named
+// owner, a weapon marked returned - is only dropped for weapons that no other
+// account has a row for, so shared history survives.
+async function forgetOwner(ownerId) {
+  const id = String(ownerId);
+  const record = await getOwnerCache(id);
+
+  const goneUids = new Set();
+  for (const spec of LOGS) {
+    for (const row of record?.rows?.[spec.key] || []) {
+      if (row?.uid) goneUids.add(String(row.uid));
+    }
+  }
+
+  await deleteOwnerCache(id);
+
+  for (const spec of LOGS) {
+    state.rows[spec.key] = (state.rows[spec.key] || [])
+      .filter(r => String(r.ownerId ?? "") !== id);
+    for (const row of state.rows[spec.key]) {
+      if (row?.uid) goneUids.delete(String(row.uid));
+    }
+  }
+
+  state.loadedOwners.delete(id);
+  state.factStores.delete(id);
+  state.marketRows = state.marketRows.filter(r => String(r.ownerId ?? "") !== id);
+
+  const prefix = `${id}:`;
+  for (const key of [...state.manualPrices.keys()]) {
+    if (key.startsWith(prefix)) state.manualPrices.delete(key);
+  }
+  for (const key of [...state.loanSettled]) {
+    if (String(key).startsWith(prefix)) state.loanSettled.delete(key);
+  }
+  for (const uid of goneUids) {
+    state.uidOwners.delete(String(uid));
+    state.returnedUids.delete(String(uid));
+  }
+  state.marketManualRows = state.marketManualRows
+    .filter(r => !goneUids.has(String(r.uid)));
+
+  saveManualPrices();
+  saveLoanSettled();
+  saveUidOwners();
+  saveReturnedUids();
+  saveMarketManualRows();
+
+  state.raw = null;
+  invalidateOwnerDefaults();
+  return { name: record?.ownerName || id, uids: goneUids.size };
+}
+
+// An account that is set aside keeps everything it has saved, but takes no
+// part in anything: no rows, no rebuild, and - the point of it - no share in
+// the ownership the loaded accounts hold in common.
+async function setOwnerActive(ownerId, active) {
+  const id = String(ownerId);
+  const record = await getOwnerCache(id);
+  if (!record) return null;
+
+  await putOwnerCache({ ...record, inactive: !active });
+
+  if (!active) {
+    for (const spec of LOGS) {
+      state.rows[spec.key] = (state.rows[spec.key] || [])
+        .filter(r => String(r.ownerId ?? "") !== id);
+    }
+    state.loadedOwners.delete(id);
+    state.factStores.delete(id);
+    state.marketRows = state.marketRows.filter(r => String(r.ownerId ?? "") !== id);
+    state.raw = null;
+  }
+
+  invalidateOwnerDefaults();
+  return record.ownerName || id;
+}
+
+// The whole record, as a file: the rows, the facts behind them, and the
+// watermarks that say how much of the history has been walked. Importing it
+// puts the account back exactly as it was, without a single request.
+function exportOwnerRecord(record) {
+  const name = String(record?.ownerName || record?.ownerId || "owner")
+    .replace(/[^A-Za-z0-9_-]+/g, "-");
+  const blob = new Blob([JSON.stringify(record)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `tornRW-${name}-${record?.ownerId}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+async function importOwnerRecord(text) {
+  let record;
+  try {
+    record = JSON.parse(text);
+  } catch (err) {
+    throw new Error("That file is not readable JSON.");
+  }
+
+  if (!record || record.ownerId === null || record.ownerId === undefined) {
+    throw new Error("That file is not a saved account - no ownerId in it.");
+  }
+  if (!record.rows && !record.raw) {
+    throw new Error("That file has neither rows nor saved facts in it.");
+  }
+
+  await putOwnerCache({
+    ...record,
+    ownerId: String(record.ownerId),
+    inactive: record.inactive === true,
+    savedAt: Number(record.savedAt) || Date.now()
+  });
+
+  return { id: String(record.ownerId), name: record.ownerName || String(record.ownerId) };
 }
 
 function maxTimestamp(rows) {
@@ -2003,9 +2223,11 @@ function catalogSlot(itemId) {
 }
 
 // Live listings and manually added rows share every downstream code path; only
-// `source` separates them.
+// `source` separates them. White equipment is not what this tool is about, so
+// a plain listing is left off the tab exactly as it is left out of every table.
 function allMarketRows() {
-  return [...state.marketRows, ...state.marketManualRows];
+  return [...state.marketRows, ...state.marketManualRows]
+    .filter(r => QUALIFYING_RARITIES.has(String(r.rarity ?? "").toLowerCase()));
 }
 
 function saveMarketManualRows() {
@@ -2451,7 +2673,7 @@ function cacheAcquisitions() {
 
   for (const [logId, source] of [[ITEM_MARKET_BUY_LOG, "Item market"],
                                  [BAZAAR_BUY_LOG, "Bazaar"]]) {
-    for (const entry of Object.values(activeRaw().logEntries[String(logId)] || {})) {
+    for (const entry of factLogEntries(logId)) {
       const data = entry?.data || {};
       for (const item of (Array.isArray(data.items) ? data.items : [])) {
         if (!RW_CACHE_IDS.has(Number(item?.id))) continue;
@@ -2465,7 +2687,7 @@ function cacheAcquisitions() {
   }
 
   // Bought with Bunker Bucks, so there is no money price to carry over.
-  for (const entry of Object.values(activeRaw().logEntries[String(BUNKER_BUY_LOG)] || {})) {
+  for (const entry of factLogEntries(BUNKER_BUY_LOG)) {
     const data = entry?.data || {};
     add(data.item, {
       timestamp: Number(entry.timestamp),
@@ -2500,7 +2722,7 @@ function cacheWeaponOrigins() {
   const nextFree = new Map();
   const origins = new Map();
 
-  const openings = Object.values(activeRaw().logEntries[String(CACHE_USE_LOG)] || {})
+  const openings = factLogEntries(CACHE_USE_LOG)
     .filter(e => RW_CACHE_IDS.has(Number(e?.data?.item)))
     .sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
 
@@ -2565,7 +2787,7 @@ function cacheSaleProceeds(data) {
 function cacheTrades(direction) {
   const out = [];
 
-  for (const record of Object.values(activeRaw().trades)) {
+  for (const record of factTrades()) {
     const trade = record?.detail;
     if (!trade) continue;
 
@@ -2612,7 +2834,7 @@ function cacheTrades(direction) {
 function cacheSales() {
   const sales = [];
   for (const [logId, source] of Object.entries(CACHE_SELL_LOGS)) {
-    for (const entry of Object.values(activeRaw().logEntries[String(logId)] || {})) {
+    for (const entry of factLogEntries(logId)) {
       const data = entry?.data || {};
       for (const item of (Array.isArray(data.items) ? data.items : [])) {
         const cacheId = Number(item?.id);
@@ -2653,17 +2875,24 @@ function cacheSales() {
 
 // Which weapons' Bucks paid for which cache purchase, oldest Bucks first.
 function bunkerBuckLedger() {
+  // Several weapons exchanged in one sitting carry the same timestamp, and the
+  // order rows arrive in is not stable between loads. Which of them is spent
+  // first does not matter, but it must be the same answer every time, or the
+  // same history values a weapon differently on each rebuild - so equal
+  // timestamps are settled by UID.
   const lots = (state.rows.bunkerSells || [])
     .filter(r => r.bunkerBucks > 0)
     .map(r => ({
       timestamp: Number(r.timestamp),
       uid: String(r.uid),
+      bucks: Number(r.bunkerBucks),
       remaining: Number(r.bunkerBucks)
     }))
-    .sort((a, b) => a.timestamp - b.timestamp);
+    .sort((a, b) => a.timestamp - b.timestamp ||
+      String(a.uid).localeCompare(String(b.uid), undefined, { numeric: true }));
 
   const purchases = [];
-  for (const entry of Object.values(activeRaw().logEntries[String(BUNKER_BUY_LOG)] || {})) {
+  for (const entry of factLogEntries(BUNKER_BUY_LOG)) {
     const cacheId = Number(entry?.data?.item);
     if (!RW_CACHE_IDS.has(cacheId)) continue;
     purchases.push({
@@ -2675,8 +2904,14 @@ function bunkerBuckLedger() {
   }
   purchases.sort((a, b) => a.timestamp - b.timestamp);
 
+  // Equal timestamps on both sides too, so a purchase made in the same sitting
+  // as the exchange that paid for it is funded by it rather than skipped.
+  purchases.sort((a, b) => a.timestamp - b.timestamp || a.cacheId - b.cacheId);
+
   for (const purchase of purchases) {
     let outstanding = purchase.bucks;
+    // Oldest lot first, and each one emptied before the next is touched: a
+    // weapon is never left part-spent while a later one is being drawn on.
     for (const lot of lots) {
       if (outstanding <= 0) break;
       if (lot.remaining <= 0 || lot.timestamp > purchase.timestamp) continue;
@@ -2709,7 +2944,7 @@ function cacheChain() {
     }
   }
 
-  const openings = Object.values(activeRaw().logEntries[String(CACHE_USE_LOG)] || {})
+  const openings = factLogEntries(CACHE_USE_LOG)
     .filter(e => RW_CACHE_IDS.has(Number(e?.data?.item)))
     .map(e => ({
       kind: "opened",
@@ -2751,8 +2986,8 @@ function resolveCacheValue(acquisition, chain, depth, seen) {
     let total = 0;
     let known = false;
     for (const uid of disposal.produced) {
-      const value = resolveWeaponValue(uid, chain, depth + 1, seen);
-      if (value !== null) { total += value; known = true; }
+      const resolved = resolveWeaponValue(uid, chain, depth + 1, seen);
+      if (resolved !== null) { total += resolved.value; known = true; }
     }
     if (known) return total;
   }
@@ -2760,13 +2995,18 @@ function resolveCacheValue(acquisition, chain, depth, seen) {
   return null;
 }
 
-// What a weapon fetched at the bunker: its Bucks, each priced by the cache they
-// helped buy.
+// What a weapon exchanged at the bunker turned out to be worth.
+//
+// The Bucks it earned are worth whatever the caches they bought went on to
+// fetch - but only the Bucks actually spent have an answer of that kind. Bucks
+// still in hand, or spent on a cache whose fate is unknown, are worth the going
+// rate, the same figure an unspent exchange is quoted at. Counting only the
+// spent part would value a 12-Buck weapon at four Bucks' worth.
 function resolveWeaponValue(uid, chain, depth, seen) {
   if (depth > CACHE_CHAIN_DEPTH) return null;
 
   let total = 0;
-  let known = false;
+  let resolvedBucks = 0;
 
   for (const purchase of chain.ledger.purchases) {
     const share = purchase.contributions.find(c => c.uid === String(uid));
@@ -2778,10 +3018,24 @@ function resolveWeaponValue(uid, chain, depth, seen) {
     if (cacheValue === null) continue;
 
     total += share.bucks * (cacheValue / purchase.bucks);
-    known = true;
+    resolvedBucks += share.bucks;
   }
 
-  return known ? total : null;
+  if (!resolvedBucks) return null;
+
+  const lot = chain.ledger.lots.find(l => l.uid === String(uid));
+  const rest = Math.max(0, Number(lot?.bucks || 0) - resolvedBucks);
+  const rate = bunkerBuckValue();
+
+  // Nothing to value the remainder at; the part that is known is still a floor,
+  // but calling it the weapon's worth would understate it, so it is not.
+  if (rest > 0 && !rate) return null;
+
+  return {
+    value: total + rest * rate,
+    resolvedBucks,
+    estimatedBucks: rest
+  };
 }
 
 // uid -> what the chain says the weapon realised, and how it got there.
@@ -2791,9 +3045,14 @@ function bunkerChainValues() {
 
   for (const row of state.rows.bunkerSells || []) {
     const uid = String(row.uid);
-    const value = resolveWeaponValue(uid, chain, 0, new Set());
-    if (value !== null) {
-      out.set(uid, { value: Math.round(value), basis: "chain" });
+    const resolved = resolveWeaponValue(uid, chain, 0, new Set());
+    if (resolved !== null) {
+      out.set(uid, {
+        value: Math.round(resolved.value),
+        basis: resolved.estimatedBucks > 0 ? "part-chain" : "chain",
+        resolvedBucks: resolved.resolvedBucks,
+        estimatedBucks: resolved.estimatedBucks
+      });
     }
   }
 
@@ -3161,7 +3420,6 @@ function tradeEquipmentEntries(items) {
   });
 }
 
-const QUALIFYING_RARITIES = new Set(["yellow", "orange", "red"]);
 
 // What a trade can be made to say about the weapons in it.
 //
@@ -4009,6 +4267,7 @@ function buildUniqueItemsRows() {
         bunkerBucks: row.bunkerBucks ?? null,
         cacheEstimated: row.cacheEstimated ?? false,
         bunkerEstimated: row.bunkerEstimated ?? false,
+        bunkerPartial: row.bunkerPartial ?? null,
         tradeId: row.tradeId ?? null,
         hasReceipt: !!row.receipt,
         editable: rowAcceptsManualPrice(spec.key, row),
@@ -5342,10 +5601,14 @@ function historyCell(r, g, sub, ctx) {
     // what was paid, and says so on hover.
     const estimateTitle = entry.cacheEstimated
       ? "Cache market value - no matching purchase found"
-      : (entry.bunkerEstimated
-        ? "Estimated: today's cache market value per Buck. No sale of the caches " +
-          "these Bucks bought has been matched to it yet."
-        : null);
+      : (entry.bunkerPartial
+        ? `${entry.bunkerPartial.resolved} of ${entry.bunkerPartial.resolved +
+            entry.bunkerPartial.estimated} Bucks are priced by the caches they ` +
+          `bought; the other ${entry.bunkerPartial.estimated} at today's rate.`
+        : (entry.bunkerEstimated
+          ? "Estimated: today's cache market value per Buck. No sale of the caches " +
+            "these Bucks bought has been matched to it yet."
+          : null));
 
     const realTitle = entry.bunkerBucks
       ? "From the sale of the caches these Bucks bought"
@@ -6513,6 +6776,9 @@ async function loadAll(key, keyRow=null, options={}) {
   // user presses this owner's Load button.
   setKeyPhase(key, "loading IndexedDB cache");
   const cached = await getOwnerCache(ownerId);
+  // Loading an account's key is as clear a statement as the toggle that it is
+  // wanted back.
+  if (cached?.inactive && !rebuild) cached.inactive = false;
   const cachedRows = cached?.rows || {};
   const watermarks = { ...(cached?.watermarks || {}) };
   let tradeWatermark = Number(cached?.tradeWatermark || 0);
@@ -6522,6 +6788,7 @@ async function loadAll(key, keyRow=null, options={}) {
   state.raw = cached?.raw?.version
     ? cached.raw
     : (cached ? rawFromLegacyRows(cached) : newRawStore());
+  state.factStores.set(ownerId, state.raw);
   primeCachesFromRaw();
   ownerDebug.rawStore = state.raw;
   ownerDebug.rawStats = rawStoreStats(state.raw);
@@ -6847,7 +7114,12 @@ async function loadAll(key, keyRow=null, options={}) {
       if (!resolved) continue;
       row.price = resolved.value;
       row.chainValued = true;
-      row.bunkerEstimated = false;
+      // Part of this weapon's Bucks are still unaccounted for and valued at
+      // today's rate, so the figure is not wholly a record of what was got.
+      row.bunkerEstimated = resolved.basis === "part-chain";
+      row.bunkerPartial = resolved.basis === "part-chain"
+        ? { resolved: resolved.resolvedBucks, estimated: resolved.estimatedBucks }
+        : null;
     }
     for (const row of state.rows.caches || []) {
       if (String(row.ownerId ?? "") !== ownerId) continue;
@@ -6928,7 +7200,7 @@ async function rebuildAllFromSaved(options={}) {
   const allowCatalogFetch = options.allowCatalogFetch === true;
   const quiet = options.quiet === true;
 
-  const records = await getAllOwnerCaches();
+  const records = (await getAllOwnerCaches()).filter(r => !r?.inactive);
   if (!records.length) {
     if (!quiet) status("Nothing is saved yet - press Load data first.", true);
     return 0;
@@ -7087,6 +7359,158 @@ function addKeyRow(initialKey="") {
 
 document.getElementById("addKeyBtn").addEventListener("click", () => {
   addKeyRow("");
+});
+
+// Every account with something saved, and a way to drop one. Loading a second
+// person's key to try the viewer out should not mean living with their weapons
+// in your tables for ever.
+async function renderSavedDataPanel() {
+  const panel = document.getElementById("savedDataPanel");
+  if (!panel) return;
+
+  let records = [];
+  try {
+    records = await getAllOwnerCaches();
+  } catch (err) {
+    panel.innerHTML = `<div>Saved data could not be read: ${esc(err?.message || String(err))}</div>`;
+    return;
+  }
+
+  if (!records.length) {
+    panel.innerHTML = "<div>Nothing is saved yet.</div>";
+    return;
+  }
+
+  panel.innerHTML = records.map(record => {
+    const id = String(record.ownerId);
+    const weapons = new Set();
+    for (const spec of LOGS) {
+      for (const row of record?.rows?.[spec.key] || []) {
+        if (row?.uid) weapons.add(String(row.uid));
+      }
+    }
+    const facts = rawStoreStats(record.raw);
+    const saved = record.savedAt ? formatDate(Math.round(record.savedAt / 1000)) : "unknown";
+
+    const aside = record.inactive === true;
+
+    return `<div class="saved-owner${aside ? " is-aside" : ""}">
+      <span>
+        <span class="saved-owner-name">${esc(record.ownerName || id)}` +
+        `${aside ? ` <span class="aside-tag">set aside</span>` : ""}</span>
+        <span class="saved-owner-detail">id ${esc(id)} · ${weapons.size} weapons · ` +
+        `${facts.logEntries} log entries · ${facts.trades} trades · saved ${esc(saved)}</span>
+      </span>
+      <span class="saved-owner-actions">
+        <button type="button" class="owner-action" data-export-owner="${esc(id)}"
+          title="Save this account to a file">Export</button>
+        <button type="button" class="owner-action" data-toggle-owner="${esc(id)}"
+          title="${aside ? "Put this account back in the tables"
+            : "Keep the data but leave this account out of the tables and out of shared ownership"}"
+          >${aside ? "Bring back" : "Set aside"}</button>
+        <button type="button" class="forget-owner" data-forget-owner="${esc(id)}"
+          >Forget</button>
+      </span>
+    </div>`;
+  }).join("") +
+    `<div class="saved-data-import">
+      <button type="button" class="owner-action" id="importOwnerBtn"
+        title="Load an account from a file exported here">Import from file</button>
+    </div>`;
+
+  panel.querySelectorAll("[data-export-owner]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const record = records.find(r => String(r.ownerId) === btn.dataset.exportOwner);
+      if (!record) return;
+      exportOwnerRecord(record);
+      status(`${record.ownerName || record.ownerId}: saved to a file.`);
+    });
+  });
+
+  panel.querySelectorAll("[data-toggle-owner]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.toggleOwner;
+      const record = records.find(r => String(r.ownerId) === id);
+      const bringBack = record?.inactive === true;
+
+      try {
+        const name = await setOwnerActive(id, bringBack);
+        await rebuildAllFromSaved({ quiet: true });
+        status(bringBack
+          ? `${name}: back in the tables.`
+          : `${name}: set aside. Its data is kept, but it is out of the tables ` +
+            `and no longer shares ownership.`);
+      } catch (err) {
+        console.error(err);
+        status(`Could not change ${record?.ownerName || id}: ${err?.message || err}`, true);
+      }
+      await renderSavedDataPanel();
+      render();
+    });
+  });
+
+  const importBtn = document.getElementById("importOwnerBtn");
+  const importInput = document.getElementById("importOwnerFile");
+  if (importBtn && importInput) {
+    importBtn.addEventListener("click", () => importInput.click());
+  }
+
+  panel.querySelectorAll("[data-forget-owner]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.forgetOwner;
+      const record = records.find(r => String(r.ownerId) === id);
+      const name = record?.ownerName || id;
+      if (!window.confirm(
+        `Forget everything saved for ${name}?\n\n` +
+        "Their weapons, logs and trades are removed from this browser. " +
+        "Loading their key again would pull it all back from Torn."
+      )) return;
+
+      let gone;
+      try {
+        gone = await forgetOwner(id);
+      } catch (err) {
+        console.error(err);
+        status(`Could not forget ${name}: ${err?.message || err}`, true);
+        return;
+      }
+
+      // Re-derive what is left from the records that remain, so the tables are
+      // right without waiting for a reload. Costs no requests - and a rebuild
+      // that cannot run does not mean the data is still there.
+      try {
+        const left = await rebuildAllFromSaved({ quiet: true });
+        status(`${gone.name}: saved data forgotten. ` +
+          (left ? `${left} account${left === 1 ? "" : "s"} left.` : "Nothing is saved now."));
+      } catch (err) {
+        console.error(err);
+        status(`${gone.name}: saved data forgotten. Reload the page to rebuild the tables.`);
+      }
+      await renderSavedDataPanel();
+      render();
+    });
+  });
+}
+
+document.getElementById("savedData")?.addEventListener("toggle", e => {
+  if (e.target.open) renderSavedDataPanel();
+});
+
+document.getElementById("importOwnerFile")?.addEventListener("change", async e => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+
+  try {
+    const imported = await importOwnerRecord(await file.text());
+    await rebuildAllFromSaved({ quiet: true });
+    status(`${imported.name}: imported from ${file.name}.`);
+  } catch (err) {
+    console.error(err);
+    status(`Import failed: ${err?.message || err}`, true);
+  }
+  await renderSavedDataPanel();
+  render();
 });
 
 const savedKeys = readSavedKeys();
