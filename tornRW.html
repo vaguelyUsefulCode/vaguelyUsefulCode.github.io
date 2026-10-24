@@ -332,7 +332,7 @@ th[rowspan="2"]{vertical-align:middle}
   flex:0 0 auto;
 }
 .state-swatch.state-loaned-in{background:#6d8ab4}
-.state-swatch.state-returned{background:#6f6a5c}
+.state-swatch.state-returned{background:#8c8c8c}
 .state-swatch.state-listed{background:#d0a23c}
 .state-swatch.state-sold{background:#74a157}
 .state-swatch.state-faction{background:#9573b8}
@@ -408,29 +408,6 @@ th[rowspan="2"]{vertical-align:middle}
   margin:0 8px 2px 0;
 }
 .funder-bb{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
-.settle-section{border-bottom:14px solid transparent}
-#table tr.settle-heading th{
-  text-align:left;
-  background:var(--panel2);
-  font-size:14px;
-  padding:11px 10px;
-  white-space:normal;
-}
-.settle-hint{
-  display:block;
-  color:var(--muted);
-  font-size:12px;
-  font-weight:400;
-  margin-top:3px;
-}
-#table tr.settle-head th{
-  background:var(--panel);
-  font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  color:var(--muted);
-  position:static;
-}
 .row-note{
   display:block;
   color:var(--muted);
@@ -580,6 +557,98 @@ th[rowspan="2"]{vertical-align:middle}
 }
 .trade-view-link:hover{text-decoration:underline}
 .modal-sub{color:var(--muted);font-size:13px;margin-top:3px}
+.modal-wide{max-width:980px}
+.modal-back{
+  display:inline-block;
+  margin-bottom:7px;
+  padding:3px 9px;
+  background:transparent;
+  color:var(--accent2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+.modal-back:hover{border-color:var(--accent2)}
+
+/* A weapon's whole history. The cells are the table's own, so a price is
+   edited here exactly as it is there. */
+.item-history{padding:4px 6px 10px;overflow-x:auto}
+.holding-section{
+  margin:10px 0 14px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+}
+.holding-section.is-unresolved{border-color:#8a6d3b}
+.holding-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  padding:8px 10px;
+  background:var(--panel2);
+  border-bottom:1px solid var(--border);
+}
+.holding-title{font-size:12px;font-weight:650}
+.holding-note{
+  margin-left:8px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:400;
+  text-transform:none;
+}
+.holding-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.holding-owner{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:var(--muted);
+  font-size:11px;
+}
+.holding-mark{
+  padding:3px 9px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:transparent;
+  color:var(--muted);
+  font-size:11px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.holding-mark:hover{border-color:var(--accent2);color:var(--text)}
+.holding-mark.is-active{border-color:var(--accent2);color:var(--accent2)}
+.holding-mark-cell{width:96px;text-align:right}
+.item-history-table tr.is-outcome td{background:#232014}
+.inline-action.is-unresolved{border-color:#8a6d3b;color:#d2a65a}
+.item-history-table{width:100%;min-width:0;border-collapse:collapse}
+.item-history-table th{
+  position:static;
+  background:transparent;
+  border-bottom:1px solid var(--border);
+  padding:8px 10px;
+}
+.item-history-table td{
+  padding:8px 10px;
+  border-bottom:1px solid #2c2819;
+  vertical-align:top;
+}
+.item-history-table tbody tr:last-child td{border-bottom:0}
+.item-history-table .history-party{white-space:normal;overflow-wrap:break-word}
+
+/* The item name as the way into its history. */
+.item-history-link{
+  background:transparent;
+  border:0;
+  padding:0;
+  font:inherit;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.item-history-link:hover{color:var(--accent2);text-decoration:underline}
 .modal-close{
   background:var(--panel2);
   color:var(--text);
@@ -670,8 +739,8 @@ tr.market-draft td:first-child{box-shadow:inset 3px 0 0 #6d8ab4}
    backgrounds, so the left edge marker carries the signal across the whole row. */
 tr.state-loaned-in td{background:#1b1f27}
 tr.state-loaned-in td:first-child{box-shadow:inset 3px 0 0 #6d8ab4}
-tr.state-returned td{background:#1e1d19}
-tr.state-returned td:first-child{box-shadow:inset 3px 0 0 #6f6a5c}
+tr.state-returned td{background:#1d1d1d}
+tr.state-returned td:first-child{box-shadow:inset 3px 0 0 #8c8c8c}
 tr.state-listed td{background:#262013}
 tr.state-listed td:first-child{box-shadow:inset 3px 0 0 #d0a23c}
 tr.state-sold td{background:#1a2218}
@@ -685,17 +754,6 @@ tr.state-inventory td:first-child{box-shadow:inset 3px 0 0 #4a4432}
 /* An Items Received entry that is the earliest event on the weapon. */
 tr.first-acquisition td{background:#252015}
 tr.first-acquisition td:first-child{box-shadow:inset 3px 0 0 var(--accent2)}
-.col-group-toggle-label{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  cursor:pointer;
-  color:var(--muted);
-  font-size:11px;
-  font-weight:600;
-  white-space:nowrap;
-}
-.col-group-toggle-label:hover{color:var(--text)}
 .sr-only{
   position:absolute;
   width:1px;
@@ -707,15 +765,22 @@ tr.first-acquisition td:first-child{box-shadow:inset 3px 0 0 var(--accent2)}
   white-space:nowrap;
   border:0;
 }
-/* The toggle strip: same surface as the rest of the header, just shorter. */
-#table tr.col-toggle-row th{
-  height:19px;
-  padding:2px 4px;
-  border-bottom:0;
-  text-align:center;
-  vertical-align:middle;
+/* A narrow numeric column earns its width back from the padding rather than
+   from the text, which has to stay readable. */
+#table th.col-narrow,#table td.col-narrow{padding-left:6px;padding-right:6px}
+
+/* Two bonuses in one column: the second line appears only on a weapon that has
+   one, so single-bonus rows keep their height. Header, filter and body all
+   stack the same way, which is what keeps a bonus beside its own value. */
+.stack-line{display:block;line-height:1.35}
+.stack-line.stack-second{
+  margin-top:3px;
+  padding-top:3px;
+  border-top:1px dotted var(--border);
 }
-#table tr.col-toggle-row .col-group-toggle{margin:0}
+#table th .stack-line{font-size:11px}
+#table tr.filter-row .stack-line.stack-second{margin-top:4px;padding-top:0;border-top:0}
+#table tr.filter-row input.stack-line{width:100%}
 
 /* Long player names wrap at spaces rather than widening the column; the text
    shrinks instead of the row growing taller. */
@@ -830,6 +895,14 @@ tr.first-acquisition td:first-child{box-shadow:inset 3px 0 0 var(--accent2)}
   letter-spacing:.06em;
 }
 .saved-data-import{padding-top:4px;border-top:1px solid var(--border)}
+.saved-data-stated{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+}
 .profit-estimate{color:var(--muted);font-style:italic}
 .bb-note{display:block;color:var(--muted);font-size:10px;letter-spacing:.04em}
 .bb-split{
@@ -962,7 +1035,6 @@ const BUNKER_CACHE_COST = { 1118: 60, 1119: 30, 1120: 20, 1121: 50, 1122: 70 };
 
 const SUMMARY_TAB = { key: "uniqueItems", label: "RW Inventory" };
 const MARKET_TAB = { key: "itemMarket", label: "Currently Selling" };
-const SETTLE_TAB = { key: "settle", label: "Settle Transactions" };
 const CACHE_TAB = { key: "cacheSells", label: "Cache Sells" };
 
 const state = {
@@ -973,25 +1045,26 @@ const state = {
 
   itemDetailsDebug: [],
 
-  // Owner is a property of the weapon, not of any one table, so overrides are
-  // keyed by UID and apply everywhere that UID appears.
-  uidOwners: new Map(Object.entries(JSON.parse(localStorage.getItem("tornUidOwners") || "{}"))),
-  // Loans that were closed some way the logs cannot show - handed to a third
-  // party on the owner's behalf, for instance.
-  returnedUids: new Set(readStoredArray("tornReturnedUids")),
-  // Transactions settled as loans rather than sales: there is nothing in the
-  // data that can tell the two apart, so it takes a person saying so.
-  loanSettled: new Set(readStoredArray("tornLoanSettled")),
+  // What a person has decided about each holding. Keyed by the rowKey of the
+  // transaction the holding opens with; the value is either the rowKey of the
+  // transaction that ended it, or "open" for one considered and still running.
+  // No entry at all means nobody has looked yet - which is what the unresolved
+  // filter is for. See buildHoldingRows.
+  holdingOutcome: new Map(Object.entries(
+    JSON.parse(localStorage.getItem("tornHoldingOutcome") || "{}"))),
+  // Who held a weapon for one stretch of its life, same key.
+  holdingOwners: new Map(Object.entries(
+    JSON.parse(localStorage.getItem("tornHoldingOwners") || "{}"))),
   // Lazily filled from storage: ITEM_STATES is declared further down.
   stateFilter: null,
   stateFilterOpen: false,
   // Per-column Type filters for the buy end and the sell end of a weapon's life.
-  logTypeFilters: { firstLog: null, lastLog: null },
-  logTypeFilterOpen: { firstLog: false, lastLog: false },
+  logTypeFilters: { firstLog: null, outcome: null },
+  logTypeFilterOpen: { firstLog: false, outcome: false },
   hideStatColumns: localStorage.getItem("tornHideStatColumns") === "1",
   showBunkerProfit: localStorage.getItem("tornShowBunkerProfit") === "1",
   showUids: localStorage.getItem("tornShowUids") === "1",
-  hideIntermediate: localStorage.getItem("tornHideIntermediate") !== "0",
+  unresolvedOnly: localStorage.getItem("tornUnresolvedOnly") === "1",
   transactionFilters: {},
   transactionSort: { field: "firstLogTimestamp", dir: "desc" },
   userNameCache: new Map(),
@@ -1010,10 +1083,12 @@ const state = {
   marketLoading: false,
   marketManualRows: readStoredArray("tornMarketManualRows"),
   startupRebuild: null,
-  ownerDefaults: null,
+  ownerIndex: null,
   keyHolderIds: null,
   loadChain: null,
   loadBusy: false,
+  // What is open, innermost last. See the modal section.
+  modalStack: [],
   // ownerId -> that account's fact store, for the tables that span accounts.
   factStores: new Map(),
   // Which manual market price is open for editing, if any.
@@ -1478,7 +1553,7 @@ async function putOwnerCache(record) {
 // Forgetting one account.
 //
 // The facts live in that owner's own record, so the record goes. What is keyed
-// by row rather than by owner - hand-typed prices, loans marked settled - is
+// by row rather than by owner - hand-typed prices and holding decisions - is
 // prefixed with the owner id and goes with it. What is keyed by UID - a named
 // owner, a weapon marked returned - is only dropped for weapons that no other
 // account has a row for, so shared history survives.
@@ -1511,20 +1586,18 @@ async function forgetOwner(ownerId) {
   for (const key of [...state.manualPrices.keys()]) {
     if (key.startsWith(prefix)) state.manualPrices.delete(key);
   }
-  for (const key of [...state.loanSettled]) {
-    if (String(key).startsWith(prefix)) state.loanSettled.delete(key);
+  for (const key of [...state.holdingOutcome.keys()]) {
+    if (String(key).startsWith(prefix)) state.holdingOutcome.delete(key);
   }
-  for (const uid of goneUids) {
-    state.uidOwners.delete(String(uid));
-    state.returnedUids.delete(String(uid));
+  for (const key of [...state.holdingOwners.keys()]) {
+    if (String(key).startsWith(prefix)) state.holdingOwners.delete(key);
   }
   state.marketManualRows = state.marketManualRows
     .filter(r => !goneUids.has(String(r.uid)));
 
   saveManualPrices();
-  saveLoanSettled();
-  saveUidOwners();
-  saveReturnedUids();
+  saveHoldingOutcomes();
+  saveHoldingOwners();
   saveMarketManualRows();
 
   state.raw = null;
@@ -1597,6 +1670,49 @@ async function importOwnerRecord(text) {
   });
 
   return { id: String(record.ownerId), name: record.ownerName || String(record.ownerId) };
+}
+
+const STATED_FACT_STORES = [
+  { key: "owners",   label: "owners named",     get: () => state.holdingOwners,
+    save: () => saveHoldingOwners() },
+  { key: "prices",   label: "prices typed",     get: () => state.manualPrices,
+    save: () => saveManualPrices() },
+  { key: "outcomes", label: "holdings decided", get: () => state.holdingOutcome,
+    save: () => saveHoldingOutcomes() }
+];
+
+function statedFactCounts() {
+  const counts = {};
+  let total = 0;
+  for (const store of STATED_FACT_STORES) {
+    const n = store.get().size;
+    counts[store.key] = n;
+    total += n;
+  }
+  counts.total = total;
+  return counts;
+}
+
+function statedFactSummary() {
+  const counts = statedFactCounts();
+  return STATED_FACT_STORES
+    .filter(store => counts[store.key] > 0)
+    .map(store => {
+      const n = counts[store.key];
+      // "1 owner named" rather than "1 owners named".
+      const [noun, verb] = store.label.split(" ");
+      return `${n} ${n === 1 ? noun.replace(/s$/, "") : noun} ${verb}`;
+    })
+    .join(", ");
+}
+
+function resetStatedFacts() {
+  for (const store of STATED_FACT_STORES) {
+    store.get().clear();
+    store.save();
+  }
+  invalidateOwnerDefaults();
+  applyStatedFacts();
 }
 
 function maxTimestamp(rows) {
@@ -2393,36 +2509,26 @@ function buildParcelSentRows(owner) {
   return rows;
 }
 
-// ---------------------------------------------------------------------------
-// Settle Transactions: the transactions whose value we cannot derive and which
-// nobody has resolved yet. A row leaves a queue as soon as it is given a price,
-// handed a different owner, or marked as a loan.
-// ---------------------------------------------------------------------------
-function saveLoanSettled() {
-  localStorage.setItem("tornLoanSettled", JSON.stringify([...state.loanSettled]));
-}
-function markLoanSettled(rowKey, settled) {
-  if (settled) state.loanSettled.add(rowKey);
-  else state.loanSettled.delete(rowKey);
-  saveLoanSettled();
-}
 
-// UIDs whose loan the transactions already show closing. Nothing to settle.
-function settledByReturn() {
-  const out = new Set();
-  for (const item of buildUniqueItemsRows()) {
-    if (item.state === "returned") out.add(String(item.uid));
+// Lays the hand-made decisions back over the derived rows: a price somebody
+// typed, a transaction called a loan, a return the logs cannot show. The
+// stores stay the record of what was said - a row is rebuilt from the facts on
+// every load and would lose anything kept only on it - but nothing reads them
+// directly, so there is one place where a decision meets a transaction.
+function applyStatedFacts() {
+  for (const spec of LOGS) {
+    for (const row of state.rows[spec.key] || []) {
+      if (rowAcceptsManualPrice(spec.key, row)) {
+        row.price = state.manualPrices.has(row.rowKey)
+          ? state.manualPrices.get(row.rowKey)
+          : null;
+      }
+    }
   }
-  return out;
 }
 
-// The counterparty a transaction brought the weapon in from, if it came in at
-// all. Marking such a transaction a loan means that party owns the weapon.
-function incomingPartyOf(row) {
-  const id = row?.senderId ?? row?.sellerId ?? null;
-  if (!id) return null;
-  return { id: String(id), name: row.sender ?? row.seller ?? row.party ?? String(id) };
-}
+
+
 
 // Provenance, not custody: bought by this key holder rather than on someone
 // else's behalf or borrowed from them.
@@ -2449,64 +2555,10 @@ function findRowByKey(rowKey) {
   return null;
 }
 
-// Trades whose value could not be split, still unpriced, still ours.
-function settleTradeRows() {
-  const closed = settledByReturn();
-  return ["tradeBuys", "tradeSells"]
-    .flatMap(k => state.rows[k] || [])
-    .filter(r => r.priceEditable && !hasPrice(r.price) && ownerIsUs(r) &&
-      !state.loanSettled.has(r.rowKey) && !closed.has(String(r.uid)) &&
-      !rowIsInternalTransfer(r, r.receiverId ? "tradeSells" : "tradeBuys"));
-}
 
-// Everything received without a price whose owner nobody has confirmed. The
-// first-receive default is only a suggestion, so it does not count as settled.
-function settleReceivedRows() {
-  const closed = settledByReturn();
-  return (state.rows.itemsReceived || [])
-    .filter(r => !hasPrice(r.price) && !uidOwnerOverride(r.uid) &&
-      !state.loanSettled.has(r.rowKey) && !closed.has(String(r.uid)) &&
-      !rowIsInternalTransfer(r, "itemsReceived"));
-}
 
-// Sends of our own weapons with no price: either a sale we never recorded or a
-// loan. Only a person can say which.
-function settleSentRows() {
-  const closed = settledByReturn();
-  return (state.rows.itemsSent || [])
-    .filter(r => !hasPrice(r.price) && ownerIsUs(r) &&
-      !state.loanSettled.has(r.rowKey) && !closed.has(String(r.uid)) &&
-      !rowIsInternalTransfer(r, "itemsSent"));
-}
 
-function settleSections() {
-  return [
-    {
-      key: "trades",
-      title: "Trades With Uncertain Value",
-      hint: "set a buy/sell price or mark as loan",
-      rows: settleTradeRows()
-    },
-    {
-      key: "received",
-      title: "Items Received",
-      hint: "set a buy price or mark as loan",
-      rows: settleReceivedRows()
-    },
-    {
-      key: "sent",
-      title: "Items Sent",
-      hint: "set a sell price or mark as loan",
-      rows: settleSentRows()
-    }
-  ];
-}
 
-function settleQueueCount() {
-  return settleSections().reduce((n, section) => n + section.rows.length, 0);
-}
-
-const SETTLE_COLS = ["Date", "Item", "Rarity", "Owner", "Counterparty", "Price", ""];
 
 const CACHE_SELL_COLS = ["Date", "Cache", "Sold via", "Proceeds", "Fee",
   "Came from", "Bucks funded by", "$ / BB"];
@@ -2572,76 +2624,6 @@ function weaponNameForUid(uid) {
   return `#${uid}`;
 }
 
-function renderSettleTables() {
-  const table = document.getElementById("table");
-  const empty = document.getElementById("empty");
-  const sections = settleSections();
-  const total = sections.reduce((n, x) => n + x.rows.length, 0);
-
-  table.className = "";
-  table.style.width = "";
-  table.innerHTML = sections.map(section => `
-    <tbody class="settle-section">
-      <tr class="settle-heading">
-        <th colspan="${SETTLE_COLS.length}">
-          ${esc(section.title)} <span class="count">${section.rows.length}</span>
-          <span class="settle-hint">${esc(section.hint)}</span>
-        </th>
-      </tr>
-      ${section.rows.length ? `<tr class="settle-head">
-        ${SETTLE_COLS.map(c =>
-          `<th scope="col">${esc(c)}${c === "Item" ? uidToggleHtml() : ""}</th>`).join("")}
-      </tr>` : ""}
-      ${section.rows.map(r => {
-        const tradeLink = r.receipt
-          ? `<button type="button" class="trade-link" data-trade-row="${esc(r.rowKey)}"
-               title="Show the full trade">[${esc(r.tradeId)}]</button>`
-          : "";
-        return `<tr>
-          <td>${esc(formatDate(r.timestamp))}${r.viaParcel
-            ? `<span class="row-note">parcel</span>` : ""}</td>
-          <td>${esc(r.name)}${tradeLink}${uidLineHtml(r.uid)}</td>
-          <td class="${rarityClass(r.rarity).trim()}">${esc(formatRarity(r.rarity))}</td>
-          <td>${ownerCellHtml(r.uid, effectiveOwner(r))}</td>
-          <td class="history-party">${esc(r.party)}</td>
-          <td><input class="editable-price" type="text" inputmode="decimal"
-            data-price-row="${esc(r.rowKey)}"
-            value="${escInput(hasPrice(r.price) ? formatEditablePrice(r.price) : "")}"
-            placeholder="—"></td>
-          <td><button type="button" class="inline-action"
-            data-settle-loan="${esc(r.rowKey)}" data-settle-section="${section.key}"
-            title="${section.key === "received"
-              ? "Record the sender as this weapon's owner"
-              : "Settle this as a loan rather than a sale"}">Loan</button></td>
-        </tr>`;
-      }).join("")}
-    </tbody>`).join("");
-
-  bindEditablePrices(table);
-  bindOwnerControls();
-  bindUidControls(table);
-
-  table.querySelectorAll("[data-trade-row]").forEach(btn => {
-    btn.addEventListener("click", () => openTradeModal(btn.dataset.tradeRow));
-  });
-
-  table.querySelectorAll("[data-settle-loan]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const rowKey = btn.dataset.settleLoan;
-      const row = findRowByKey(rowKey);
-
-      // A transaction that brought the weapon in makes its sender the owner. One
-      // that sent it out leaves the owner alone and just records the decision.
-      const incoming = incomingPartyOf(row);
-      if (row && incoming) setUidOwner(row.uid, incoming.id, incoming.name);
-      else markLoanSettled(rowKey, true);
-      render();
-    });
-  });
-
-  empty.style.display = total ? "none" : "block";
-  if (!total) empty.textContent = "Nothing left to settle.";
-}
 
 // ---------------------------------------------------------------------------
 // Cache pricing.
@@ -4218,6 +4200,124 @@ function escInput(v) {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[c]));
 }
+// Ways a weapon can arrive. An acquisition after a disposal, inside one
+// holding, is the sign of a weapon bought back - which is a question for a
+// person, not something to assume.
+const ACQUISITION_SOURCES = new Set([
+  "imBuys", "bazaarBuys", "tradeBuys", "auctionWins", "caches",
+  "itemsReceived", "factionGiven"
+]);
+
+// Where one holding ends and the next begins.
+//
+// Walk a weapon's transactions in order. A holding runs from wherever the last
+// one left off to the transaction a person named as its ending - and if nobody
+// named one, to the end of the list. That is the default and it yields exactly
+// one holding per weapon, which is the shape the table has always had.
+// Decisions made when they were recorded against a weapon rather than against
+// a stretch of its life. A return becomes the transaction that ended the
+// holding; a loan someone confirmed becomes a holding they looked at and left
+// running; an owner moves onto the holding that was open at the time. With one
+// holding per weapon - which is what everyone had - each lands on the only
+// holding there was.
+function migrateUidDecisions() {
+  if (localStorage.getItem("tornHoldingOutcome") !== null) return;
+
+  const returned = readStoredArray("tornReturnedRows");
+  const loans = readStoredArray("tornLoanSettled");
+  const owners = JSON.parse(localStorage.getItem("tornUidOwners") || "{}");
+
+  if (!returned.length && !loans.length && !Object.keys(owners).length) return;
+
+  // Built before any decision exists, so every weapon is a single holding.
+  const firstKeyByUid = new Map();
+  const holdingOfRow = new Map();
+  for (const holding of buildUniqueItemsRows()) {
+    firstKeyByUid.set(String(holding.uid), holding.holdingKey);
+    for (const entry of holding.logs || []) holdingOfRow.set(entry.rowKey, holding.holdingKey);
+  }
+
+  // A loan confirmed is a holding considered and still running; a return is an
+  // actual ending, so it wins where a weapon carried both.
+  for (const rowKey of loans) {
+    const key = holdingOfRow.get(rowKey);
+    if (key) state.holdingOutcome.set(key, "open");
+  }
+  for (const rowKey of returned) {
+    const key = holdingOfRow.get(rowKey);
+    if (key) state.holdingOutcome.set(key, rowKey);
+  }
+  for (const [uid, owner] of Object.entries(owners)) {
+    const key = firstKeyByUid.get(String(uid));
+    if (key && owner?.id) state.holdingOwners.set(key, owner);
+  }
+
+  saveHoldingOutcomes();
+  saveHoldingOwners();
+  for (const old of ["tornReturnedRows", "tornLoanSettled", "tornUidOwners"]) {
+    localStorage.removeItem(old);
+  }
+  console.log(`[Torn] moved ${state.holdingOutcome.size} holding decisions and ` +
+    `${state.holdingOwners.size} owners off their weapons`);
+}
+
+function splitIntoHoldings(item) {
+  const out = [];
+  const logs = item.logs;
+  let start = 0;
+
+  while (start < logs.length) {
+    const holdingKey = logs[start].rowKey;
+    const decision = state.holdingOutcome.get(holdingKey);
+
+    let end = logs.length - 1;
+    if (decision && decision !== "open") {
+      const named = logs.findIndex((l, i) => i >= start && l.rowKey === decision);
+      if (named >= 0) end = named;
+    }
+
+    out.push({
+      ...item,
+      holdingKey,
+      decision: decision ?? null,
+      logs: logs.slice(start, end + 1),
+      // Kept so a row can say whether it is the whole story or one chapter.
+      holdingIndex: out.length,
+      uid: item.uid
+    });
+    start = end + 1;
+  }
+
+  // A weapon with no transactions at all cannot happen, but an empty list
+  // would silently drop it rather than showing an empty row.
+  return out.length ? out : [{ ...item, holdingKey: String(item.uid),
+    decision: null, holdingIndex: 0 }];
+}
+
+// A holding nobody has finished thinking about.
+//
+// Three questions can be outstanding: an outgoing transaction that is neither
+// priced nor declared, an arrival whose owner is only presumed, and a weapon
+// bought back inside a holding that ought to be two.
+function holdingIsUnresolved(item) {
+  const logs = item.externalLogs || item.logs || [];
+
+  if (!item.decision && logs.some(l =>
+      OUTGOING_SOURCES.has(l.sourceKey) && !hasPrice(l.price))) return true;
+
+  const first = logs[0];
+  if (first && ACQUISITION_SOURCES.has(first.sourceKey) && !hasPrice(first.price) &&
+      !ownerIsStated(item.holdingKey)) return true;
+
+  let disposed = false;
+  for (const entry of logs) {
+    if (OUTGOING_SOURCES.has(entry.sourceKey) && hasPrice(entry.price)) disposed = true;
+    else if (disposed && ACQUISITION_SOURCES.has(entry.sourceKey) && hasPrice(entry.price)) return true;
+  }
+
+  return false;
+}
+
 function buildUniqueItemsRows() {
   const byUid = new Map();
 
@@ -4286,8 +4386,18 @@ function buildUniqueItemsRows() {
     }
   }
 
+  // One weapon, one row - until somebody says a transaction ended a stretch of
+  // its life, and the transactions after it become a second row with its own
+  // acquisition, owner and profit.
+  const holdings = [];
   for (const item of byUid.values()) {
     item.logs.sort((a,b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
+    for (const slice of splitIntoHoldings(item)) holdings.push(slice);
+  }
+
+  buildOwnerIndex(holdings);
+
+  for (const item of holdings) {
     item.externalLogs = item.logs.filter(l => !isInternalTransfer(l));
     item.firstLogTimestamp = item.logs[0]?.timestamp ?? 0;
     // With several keys loaded a weapon can carry rows from more than one of
@@ -4297,7 +4407,7 @@ function buildUniqueItemsRows() {
       .sort((a,b) => String(a).localeCompare(String(b))).join(", ");
     item.acquiredById = acquired?.ownerId ?? null;
 
-    const chosen = uidOwnerOverride(item.uid) || uidOwnerDefault(item.uid);
+    const chosen = ownerOf(item.holdingKey);
     item.owner = chosen?.name || item.keyHolderName;
     item.ownerId = chosen?.id || item.acquiredById || [...item.keyHolderIds][0] || null;
 
@@ -4316,46 +4426,73 @@ function buildUniqueItemsRows() {
         : null;
   }
 
-  for (const item of byUid.values()) {
+  for (const item of holdings) {
     item.ownedByKeyHolder = !item.ownerId || isKeyHolder(item.ownerId);
     item.logState = itemLogState(item);
-    item.state = isMarkedReturned(item.uid) ? "returned" : item.logState;
+    item.state = item.logState;
     item.stateLabel = ITEM_STATES[item.state]?.label || item.state;
+    item.unresolved = holdingIsUnresolved(item);
   }
 
   // Which states are shown is the state filter's job now.
-  return [...byUid.values()].sort((a,b) =>
+  return holdings.sort((a,b) =>
     Number(a.firstLogTimestamp || 0) - Number(b.firstLogTimestamp || 0) ||
     String(a.name || "").localeCompare(String(b.name || ""), undefined, {numeric:true, sensitivity:"base"}) ||
     String(a.uid).localeCompare(String(b.uid), undefined, {numeric:true})
   );
 }
 
-// Only the first and last event matter at a glance; the rest collapse away.
+// The table carries two transactions and no more: how a weapon came in, and
+// the movement that still stands - a sale, a loan still out, a return to
+// whoever owns it. A loan that came back leaves the second slot empty, because
+// nothing about it is outstanding. Everything else is a click away on the
+// item's name, which keeps the table a fixed width whatever a weapon has been
+// through.
 function visibleItemLogs(item) {
   const logs = item.logs || [];
-  if (!state.hideIntermediate || logs.length <= 2) return logs;
-  return [logs[0], logs[logs.length - 1]];
+  if (!logs.length) return logs;
+  const outcome = outcomeLogEntry(item);
+  return outcome ? [logs[0], outcome] : [logs[0]];
 }
 
-function saveReturnedUids() {
-  localStorage.setItem("tornReturnedUids", JSON.stringify([...state.returnedUids]));
-}
-function isMarkedReturned(uid) {
-  return uid !== null && uid !== undefined && state.returnedUids.has(String(uid));
-}
-function setMarkedReturned(uid, returned) {
-  if (returned) state.returnedUids.add(String(uid));
-  else state.returnedUids.delete(String(uid));
-  saveReturnedUids();
+// Every way a weapon leaves us. A return closes one of these, which is why a
+// return is recorded against the transaction it closes rather than against the
+// weapon: a weapon can go out more than once, and "this one came back" has to
+// say which one.
+const OUTGOING_SOURCES = new Set([
+  "itemsSent", "tradeSells", "marketSells", "bazaarSells",
+  "auction", "bunkerSells", "factionDeposit"
+]);
+
+
+function saveHoldingOutcomes() {
+  localStorage.setItem("tornHoldingOutcome",
+    JSON.stringify(Object.fromEntries(state.holdingOutcome)));
 }
 
-function saveUidOwners() {
-  localStorage.setItem(
-    "tornUidOwners",
-    JSON.stringify(Object.fromEntries(state.uidOwners))
-  );
+function saveHoldingOwners() {
+  localStorage.setItem("tornHoldingOwners",
+    JSON.stringify(Object.fromEntries(state.holdingOwners)));
 }
+
+// The one decision there is about a holding: which transaction ended it, that
+// nothing has yet ("open"), or nothing said at all (null).
+function setHoldingOutcome(holdingKey, value) {
+  if (value === null || value === undefined) state.holdingOutcome.delete(String(holdingKey));
+  else state.holdingOutcome.set(String(holdingKey), String(value));
+  saveHoldingOutcomes();
+  invalidateOwnerDefaults();
+}
+
+function setHoldingOwner(holdingKey, id, name) {
+  const key = String(holdingKey);
+  if (!id || !name) state.holdingOwners.delete(key);
+  else state.holdingOwners.set(key, { id: String(id), name: String(name) });
+  saveHoldingOwners();
+  invalidateOwnerDefaults();
+}
+
+
 
 // The key holder is a fact; the owner shown in the tables is that fact unless a
 // person has overridden it for this UID.
@@ -4415,67 +4552,153 @@ function isFactionOwnerId(id) {
   return String(id ?? "").startsWith(FACTION_OWNER_PREFIX);
 }
 
-function uidOwnerOverride(uid) {
-  if (uid === null || uid === undefined || uid === "") return null;
-  return state.uidOwners.get(String(uid)) || null;
+function holdingOwnerOverride(holdingKey) {
+  if (holdingKey === null || holdingKey === undefined || holdingKey === "") return null;
+  return state.holdingOwners.get(String(holdingKey)) || null;
 }
 // If the earliest thing we know about a weapon is that somebody sent it to us,
 // they are its owner until told otherwise. An explicit choice always wins.
-function uidReceivedOwnerDefaults() {
-  const firstEvent = new Map();
-
-  for (const spec of LOGS) {
-    for (const row of state.rows[spec.key] || []) {
-      if (!row.uid) continue;
-      const uid = String(row.uid);
-      const ts = Number(row.timestamp || 0);
-      const current = firstEvent.get(uid);
-      if (!current || ts < current.timestamp) {
-        firstEvent.set(uid, {
-          timestamp: ts,
-          sourceKey: spec.key,
-          senderId: row.senderId ?? null,
-          sender: row.sender ?? null
-        });
-      }
-    }
-  }
-
+function holdingReceivedOwnerDefaults(holdings) {
   const defaults = new Map();
-  for (const [uid, first] of firstEvent) {
+
+  for (const holding of holdings) {
+    const first = holding.logs?.[0];
+    if (!first || first.sourceKey !== "itemsReceived") continue;
     // A weapon arriving from the other shared account was always ours.
-    if (first.sourceKey === "itemsReceived" && first.senderId &&
-        !isKeyHolder(first.senderId)) {
-      defaults.set(uid, {
-        id: String(first.senderId),
-        name: first.sender || String(first.senderId)
-      });
-    }
+    if (!first.fromId || isKeyHolder(first.fromId)) continue;
+    defaults.set(holding.holdingKey, {
+      id: String(first.fromId),
+      name: first.from || String(first.fromId)
+    });
   }
+
   return defaults;
 }
 
-function ownerDefaults() {
-  if (!state.ownerDefaults) state.ownerDefaults = uidReceivedOwnerDefaults();
-  return state.ownerDefaults;
+// Whoever acquired a weapon, from the rows alone: the earliest transaction
+// with an outsider, or failing that the earliest of any kind. Handing a weapon
+// between the shared accounts says nothing about whose it is, so those moves
+// are passed over.
+function holdingAcquiredOwners(holdings) {
+  const out = new Map();
+
+  for (const holding of holdings) {
+    const logs = holding.logs || [];
+    const first = logs.find(l => !isInternalTransfer(l)) || logs[0];
+    if (!first) continue;
+    out.set(holding.holdingKey, {
+      id: first.ownerId === null || first.ownerId === undefined ? null : String(first.ownerId),
+      name: first.owner ?? null
+    });
+  }
+
+  return out;
 }
-function invalidateOwnerDefaults() {
-  state.ownerDefaults = null;
-  state.keyHolderIds = null;
+
+// One owner per weapon, settled once per render and read everywhere.
+//
+// It carries where the answer came from as well as the answer: a weapon
+// received from somebody is presumed theirs, but a presumption is not a
+// decision, and the Settle queue has to be able to tell the two apart.
+// Built from the holdings themselves, so it has to be handed them rather than
+// going and asking for them: buildHoldingRows is what calls this.
+function buildOwnerIndex(holdings) {
+  const defaults = holdingReceivedOwnerDefaults(holdings);
+  const acquired = holdingAcquiredOwners(holdings);
+  const index = new Map();
+
+  const keys = new Set([
+    ...state.holdingOwners.keys(), ...defaults.keys(), ...acquired.keys()
+  ].map(String));
+
+  for (const key of keys) {
+    const override = holdingOwnerOverride(key);
+    if (override?.id) {
+      index.set(key, { id: String(override.id), name: override.name, source: "override" });
+      continue;
+    }
+    const fallback = defaults.get(key);
+    if (fallback?.id) {
+      index.set(key, { id: String(fallback.id), name: fallback.name, source: "default" });
+      continue;
+    }
+    const first = acquired.get(key);
+    if (first?.id) {
+      index.set(key, { id: first.id, name: first.name, source: "acquired" });
+    }
+  }
+
+  state.ownerIndex = index;
+  return index;
 }
-function uidOwnerDefault(uid) {
+
+function ownerIndex() {
+  return state.ownerIndex || new Map();
+}
+
+function ownerOf(uid) {
   if (uid === null || uid === undefined || uid === "") return null;
-  return ownerDefaults().get(String(uid)) || null;
+  return ownerIndex().get(String(uid)) || null;
+}
+
+// A person said so, as opposed to the viewer having presumed it.
+function ownerIsStated(uid) {
+  return ownerOf(uid)?.source === "override";
+}
+
+function invalidateOwnerDefaults() {
+  state.ownerIndex = null;
+  state.keyHolderIds = null;
 }
 
 function effectiveOwner(row) {
-  return uidOwnerOverride(row?.uid) || uidOwnerDefault(row?.uid) || keyHolderOf(row);
+  return ownerOf(row?.uid) || keyHolderOf(row);
 }
 function effectiveOwnerName(row) {
   return effectiveOwner(row).name || "";
 }
 
-async function setUidOwnerFromId(uid, rawId) {
+
+
+// Candidate owners for a UID: whoever holds the key, plus the other side of
+// each transaction the weapon appears in.
+// Who could have held it for this stretch: whoever's key the transactions came
+// from, and whoever was on the other side of one of them.
+function ownerCandidatesForHolding(holding) {
+  const byId = new Map();
+  const keys = new Set((holding?.logs || []).map(l => l.rowKey));
+
+  for (const spec of LOGS) {
+    for (const row of state.rows[spec.key] || []) {
+      if (!keys.has(row.rowKey)) continue;
+      const holder = keyHolderOf(row);
+      if (holder.id) byId.set(holder.id, { id: holder.id, name: holder.name, isKeyHolder: true });
+      if (row.partyId && row.party && !byId.has(String(row.partyId))) {
+        byId.set(String(row.partyId), { id: String(row.partyId), name: row.party, isKeyHolder: false });
+      }
+      // A weapon that went into the faction armoury can be owned by the faction.
+      if (row.factionId && row.faction) {
+        const id = factionOwnerId(row.factionId);
+        if (!byId.has(id)) {
+          byId.set(id, { id, name: row.faction, isKeyHolder: false, isFaction: true });
+        }
+      }
+    }
+  }
+
+  for (const extra of [holdingOwnerOverride(holding?.holdingKey), ownerOf(holding?.holdingKey)]) {
+    if (extra?.id && !byId.has(String(extra.id))) {
+      byId.set(String(extra.id), { id: String(extra.id), name: extra.name, isKeyHolder: false });
+    }
+  }
+  return [...byId.values()];
+}
+
+function findHolding(holdingKey) {
+  return buildUniqueItemsRows().find(h => String(h.holdingKey) === String(holdingKey)) || null;
+}
+
+async function setHoldingOwnerFromId(holdingKey, rawId) {
   const id = String(rawId ?? "").trim();
   if (!/^\d+$/.test(id)) {
     status("Enter a numeric player ID.", true);
@@ -4490,57 +4713,18 @@ async function setUidOwnerFromId(uid, rawId) {
 
   status(`Looking up player ${id}...`);
   try {
-    await state.startupRebuild;
     const name = await getUserName(id, key);
-    if (!name) throw new Error(`No player is attached to ID ${id}.`);
-    state.uidOwners.set(String(uid), { id, name });
-    saveUidOwners();
-    status(`Owner of ${uid} set to ${name} [${id}].`);
+    if (!name) {
+      status(`No player found for ID ${id}.`, true);
+      return false;
+    }
+    setHoldingOwner(holdingKey, id, name);
+    status(`Owner set to ${name}.`);
     return true;
   } catch (err) {
-    // No user attached to the ID, so nothing is saved.
-    console.error(err);
-    status(`No player found for ID ${id} - owner not changed.`, true);
+    status(`Could not look up player ${id}: ${err?.message || err}`, true);
     return false;
   }
-}
-
-function setUidOwner(uid, id, name) {
-  const key = String(uid);
-  if (!id || !name) state.uidOwners.delete(key);
-  else state.uidOwners.set(key, { id: String(id), name: String(name) });
-  saveUidOwners();
-}
-
-// Candidate owners for a UID: whoever holds the key, plus the other side of
-// each transaction the weapon appears in.
-function ownerCandidatesForUid(uid) {
-  const byId = new Map();
-  for (const spec of LOGS) {
-    for (const row of state.rows[spec.key] || []) {
-      if (String(row.uid) !== String(uid)) continue;
-      const holder = keyHolderOf(row);
-      if (holder.id) byId.set(holder.id, { id: holder.id, name: holder.name, isKeyHolder: true });
-      if (row.partyId && row.party) {
-        if (!byId.has(String(row.partyId))) {
-          byId.set(String(row.partyId), { id: String(row.partyId), name: row.party, isKeyHolder: false });
-        }
-      }
-      // A weapon that went into the faction armoury can be owned by the faction.
-      if (row.factionId && row.faction) {
-        const id = factionOwnerId(row.factionId);
-        if (!byId.has(id)) {
-          byId.set(id, { id, name: row.faction, isKeyHolder: false, isFaction: true });
-        }
-      }
-    }
-  }
-  for (const extra of [uidOwnerOverride(uid), uidOwnerDefault(uid)]) {
-    if (extra?.id && !byId.has(String(extra.id))) {
-      byId.set(String(extra.id), { id: String(extra.id), name: extra.name, isKeyHolder: false });
-    }
-  }
-  return [...byId.values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -4584,18 +4768,49 @@ function saveStateFilter() {
   localStorage.setItem(STATE_FILTER_STORAGE_KEY, JSON.stringify([...activeStateFilter()]));
 }
 
-// "first" is the earliest event; "last" is the final one and only exists when
-// there is more than one, so a weapon that was bought and never moved has a
-// buy but no sell.
+// "first" is the earliest event. "outcome" is the movement that still stands:
+// where the weapon went, if it has gone anywhere that has not been undone.
+//
+// A loan that came back is not an outcome - the weapon is simply here again -
+// so a receive closing one of our own sends leaves the slot empty. A loan
+// still out is an outcome, and so is a sale. Somebody else's weapon shows the
+// return that gave it back to them, if there was one.
 function semanticLogEntry(row, which) {
   const logs = row?.logs || [];
   if (which === "first") return logs[0] || null;
-  return logs.length >= 2 ? logs[logs.length - 1] : null;
+  return outcomeLogEntry(row);
+}
+
+function outcomeLogEntry(item) {
+  const logs = item?.externalLogs || item?.logs || [];
+
+  // A person has said how this one ends - or said that it has not.
+  if (item?.decision === "open") return null;
+  if (item?.decision) {
+    return logs.find(l => l.rowKey === item.decision) || null;
+  }
+
+  const last = logs[logs.length - 1];
+  if (!last || logs.length < 2) return null;
+
+  // Not ours: what matters is whether it went back to whoever owns it.
+  if (item?.ownedByKeyHolder === false) {
+    const owner = String(item?.ownerId ?? "");
+    const returned = [...logs].reverse().find(entry =>
+      RETURN_SOURCES.has(entry?.sourceKey) && String(entry?.toId ?? "") === owner);
+    return returned || null;
+  }
+
+  // Ours, and the last thing that happened was it coming back: the loan behind
+  // it is closed, so there is nothing outstanding to show.
+  if (!OUTGOING_SOURCES.has(last.sourceKey)) return null;
+
+  return last;
 }
 
 const LOG_TYPE_SLOTS = {
   firstLog: { which: "first", label: "First" },
-  lastLog: { which: "last", label: "Last" }
+  outcome: { which: "outcome", label: "Outcome" }
 };
 
 // A weapon with a single transaction has no last one; that absence is itself
@@ -4607,7 +4822,7 @@ const NO_ENTRY_KEY = "__none__";
 // add to the tool - arrives already ticked instead of silently filtered out.
 function logTypeOptions(slot) {
   const keys = LOGS.map(x => x.key);
-  return slot === "lastLog" ? [...keys, NO_ENTRY_KEY] : keys;
+  return slot === "outcome" ? [...keys, NO_ENTRY_KEY] : keys;
 }
 function logTypeOptionLabel(key) {
   if (key === NO_ENTRY_KEY) return "(none)";
@@ -4829,15 +5044,9 @@ function itemLogState(item) {
 
 // A hand-marked return is the last word: the logs cannot show it.
 function itemStateKey(item) {
-  return isMarkedReturned(item.uid) ? "returned" : itemLogState(item);
+  return itemLogState(item);
 }
 
-// Marking a return only makes sense for somebody else's weapon that the logs do
-// not already show coming back.
-function canMarkReturned(item) {
-  if (isMarkedReturned(item.uid)) return true;
-  return !item.ownedByKeyHolder && item.logState !== "returned";
-}
 
 // UIDs whose earliest recorded event is an Items Received entry.
 function uidsFirstSeenAsReceived() {
@@ -4851,11 +5060,12 @@ function uidsFirstSeenAsReceived() {
 
 // An owner dropdown: every candidate for this UID, plus a free ID entry that is
 // only committed once the ID resolves to a real player.
-function ownerCellHtml(uid, current) {
-  if (uid === null || uid === undefined || uid === "") return esc(current?.name);
+function ownerCellHtml(holding, current) {
+  const key = holding?.holdingKey;
+  if (key === null || key === undefined || key === "") return esc(current?.name);
 
-  const candidates = ownerCandidatesForUid(uid);
-  const editing = String(state.ownerEditUid ?? "") === String(uid);
+  const candidates = ownerCandidatesForHolding(holding);
+  const editing = String(state.ownerEditUid ?? "") === String(key);
   const currentId = String(current?.id ?? "");
 
   const options = candidates.map(c =>
@@ -4863,12 +5073,12 @@ function ownerCellHtml(uid, current) {
     `${esc(c.name)}</option>`
   ).join("");
 
-  return `<select class="owner-select" data-owner-uid="${escInput(uid)}">
+  return `<select class="owner-select" data-owner-uid="${escInput(key)}">
       ${options}
       <option value="__custom__"${editing ? " selected" : ""}>Enter ID…</option>
     </select>` +
     (editing
-      ? `<input class="owner-id-input" data-owner-id-uid="${escInput(uid)}" type="text"
+      ? `<input class="owner-id-input" data-owner-id-uid="${escInput(key)}" type="text"
            inputmode="numeric" placeholder="Player ID">`
       : "");
 }
@@ -4876,18 +5086,19 @@ function ownerCellHtml(uid, current) {
 function bindOwnerControls() {
   document.querySelectorAll("[data-owner-uid]").forEach(select => {
     select.addEventListener("change", () => {
-      const uid = select.dataset.ownerUid;
+      const key = select.dataset.ownerUid;
 
       if (select.value === "__custom__") {
-        state.ownerEditUid = uid;
+        state.ownerEditUid = key;
         render();
         return;
       }
 
       // Stored even when it is the key holder, so it outranks the
       // first-receive default.
-      const chosen = ownerCandidatesForUid(uid).find(c => String(c.id) === select.value);
-      if (chosen) setUidOwner(uid, chosen.id, chosen.name);
+      const holding = findHolding(key);
+      const chosen = ownerCandidatesForHolding(holding).find(c => String(c.id) === select.value);
+      if (chosen) setHoldingOwner(key, chosen.id, chosen.name);
 
       state.ownerEditUid = null;
       render();
@@ -4899,8 +5110,8 @@ function bindOwnerControls() {
     const finish = async (commit) => {
       if (done) return;
       done = true;
-      const uid = input.dataset.ownerIdUid;
-      if (commit && input.value.trim()) await setUidOwnerFromId(uid, input.value);
+      const key = input.dataset.ownerIdUid;
+      if (commit && input.value.trim()) await setHoldingOwnerFromId(key, input.value);
       state.ownerEditUid = null;
       render();
     };
@@ -4935,7 +5146,6 @@ function renderTabs() {
   const allTabs = [
     {...SUMMARY_TAB, count: buildUniqueItemsRows().length},
     {...MARKET_TAB, count: allMarketRows().length},
-    {...SETTLE_TAB, count: settleQueueCount()},
     {...CACHE_TAB, count: cacheSales().length}
   ];
 
@@ -5004,34 +5214,23 @@ function setManualPrice(rowKey, rawValue) {
   return true;
 }
 
-// Weapons sitting in a Settle Transactions queue: a trade with no price, a
-// receive or send nobody has called a sale or a loan yet.
-function unsettledUids() {
-  const uids = new Set();
-  for (const section of settleSections()) {
-    for (const row of section.rows) {
-      if (row?.uid !== null && row?.uid !== undefined) uids.add(String(row.uid));
-    }
-  }
-  return uids;
-}
 
 // Two figures the transactions can actually support: what the weapons that
 // have gone made, and what the ones still on hand cost to buy. Weapons that
 // were never ours count towards neither, and neither do ones with a
-// transaction still waiting to be settled - their cost or proceeds is not a
+// holding still waiting on a decision - their cost or proceeds is not a
 // number yet, and counting them as zero would flatter both figures. Both
 // follow the filters, so the numbers describe what is on screen.
 function inventoryProfit(rows) {
   let realised = 0;
   let unrealised = 0;
   let excluded = 0;
-  const unsettled = unsettledUids();
+
 
   for (const item of rows) {
     if (!item.ownedByKeyHolder) continue;
 
-    if (unsettled.has(String(item.uid))) {
+    if (item.unresolved) {
       excluded += 1;
       continue;
     }
@@ -5084,15 +5283,19 @@ function renderTableActions() {
             >${esc(formatMoney(pnl.unrealised))}</span></span>
         ${pnl.excluded ? `<span class="pnl-item pnl-excluded"
             title="Weapons with a transaction still in Settle Transactions are left out of both figures"
-            >${pnl.excluded} unsettled</span>` : ""}
+            >${pnl.excluded} unresolved</span>` : ""}
       </span>
+      <label class="history-option">
+        <input type="checkbox" id="unresolvedOnly" ${state.unresolvedOnly ? "checked" : ""}>
+        Unresolved only
+      </label>
+      <label class="history-option">
+        <input type="checkbox" id="statColumns" ${state.hideStatColumns ? "" : "checked"}>
+        Stat columns
+      </label>
       <label class="history-option">
         <input type="checkbox" id="bunkerProfit" ${state.showBunkerProfit ? "checked" : ""}>
         Profit at bunker value
-      </label>
-      <label class="history-option">
-        <input type="checkbox" id="hideIntermediate" ${state.hideIntermediate ? "checked" : ""}>
-        Hide intermediate transactions
       </label>`;
 
     const details = document.getElementById("stateFilter");
@@ -5118,17 +5321,25 @@ function renderTableActions() {
       });
     });
 
+    document.getElementById("unresolvedOnly").addEventListener("change", e => {
+      state.unresolvedOnly = e.target.checked;
+      localStorage.setItem("tornUnresolvedOnly", e.target.checked ? "1" : "0");
+      render();
+    });
+
+    document.getElementById("statColumns").addEventListener("change", e => {
+      state.hideStatColumns = !e.target.checked;
+      localStorage.setItem("tornHideStatColumns", state.hideStatColumns ? "1" : "0");
+      // The column list itself changes, so the table is rebuilt.
+      render();
+    });
+
     document.getElementById("bunkerProfit").addEventListener("change", e => {
       state.showBunkerProfit = e.target.checked;
       localStorage.setItem("tornShowBunkerProfit", e.target.checked ? "1" : "0");
       render();
     });
 
-    document.getElementById("hideIntermediate").addEventListener("change", e => {
-      state.hideIntermediate = e.target.checked;
-      localStorage.setItem("tornHideIntermediate", e.target.checked ? "1" : "0");
-      render();
-    });
     return;
   }
 
@@ -5186,13 +5397,13 @@ const HISTORY_SUB_COLS = [
 const HISTORY_NUMERIC_PROPS = new Set(["timestamp", "price"]);
 
 // "log2.price" addresses the third visible entry on the row; "firstLog.type"
-// and "lastLog.type" address the ends of its history regardless of what is on
+// and "outcome.type" address the ends of its history regardless of what is on
 // screen.
 function historyFieldParts(field) {
   const name = String(field ?? "");
-  const semantic = /^(firstLog|lastLog)\.(\w+)$/.exec(name);
+  const semantic = /^(firstLog|outcome)\.(\w+)$/.exec(name);
   if (semantic) {
-    return { which: semantic[1] === "firstLog" ? "first" : "last", prop: semantic[2] };
+    return { which: semantic[1] === "firstLog" ? "first" : "outcome", prop: semantic[2] };
   }
   const positional = /^log(\d+)\.(\w+)$/.exec(name);
   return positional ? { index: Number(positional[1]), prop: positional[2] } : null;
@@ -5235,15 +5446,16 @@ function getFilteredTransactionRows(rows, options={}) {
   const states = activeStateFilter();
 
   const firstExcluded = excludedLogTypes("firstLog");
-  const lastExcluded = excludedLogTypes("lastLog");
+  const outcomeExcluded = excludedLogTypes("outcome");
 
   const filtered = rows.filter(row => {
+    if (state.unresolvedOnly && !row.unresolved) return false;
     if (row.state && !states.has(row.state)) return false;
 
     if (skip !== "firstLog" && firstExcluded.size &&
         firstExcluded.has(logTypeKeyOf(row, "firstLog"))) return false;
-    if (skip !== "lastLog" && lastExcluded.size &&
-        lastExcluded.has(logTypeKeyOf(row, "lastLog"))) return false;
+    if (skip !== "outcome" && outcomeExcluded.size &&
+        outcomeExcluded.has(logTypeKeyOf(row, "outcome"))) return false;
 
     for (const [field, query] of Object.entries(state.transactionFilters)) {
       if (!query) continue;
@@ -5397,6 +5609,10 @@ function bindEditablePrices(root) {
 // inside a cell can never widen its column or spill past it.
 // ---------------------------------------------------------------------------
 
+// Acquired and Last Transaction. Always both, whether or not a weapon has two
+// transactions to put in them.
+const HISTORY_GROUP_COUNT = 2;
+
 const HISTORY_SUB_SPEC = [
   { prop: "type",      label: "Transaction", width: 124 },
   { prop: "timestamp", label: "Date",        width: 152 },
@@ -5413,31 +5629,20 @@ const INVENTORY_FIXED_SPEC = [
   { key: "armor",       label: "Armor",    width: 66,  group: "stats" },
   { key: "damage",      label: "DMG",      width: 66,  group: "stats" },
   { key: "accuracy",    label: "ACC",      width: 66,  group: "stats" },
-  { key: "bonus1",      label: "Bonus 1",  width: 112 },
-  { key: "bonus1Value", label: "B1 Value", width: 62,  narrow: true },
-  { key: "bonus2",      label: "Bonus 2",  width: 112 },
-  { key: "bonus2Value", label: "B2 Value", width: 62,  narrow: true },
-  { key: "profit",      label: "Profit",   width: 104, filter: null }
+  // One column for both bonuses, stacked; its pair holds both values. The
+  // second line only exists on a weapon that has a second bonus, so a row with
+  // one bonus is no taller than it ever was.
+  { key: "bonus1",      label: "Bonus 1",  width: 124, stack: "bonus2",      stackLabel: "Bonus 2" },
+  { key: "bonus1Value", label: "Value",    width: 64,  stack: "bonus2Value", stackLabel: "Value",
+    narrow: true },
+  { key: "profit",      label: "Profit",   width: 136, filter: null }
 ];
 
 function inventoryColumns(ctx) {
   const cols = [];
 
   for (const spec of INVENTORY_FIXED_SPEC) {
-    // The stats group collapses to the single column carrying its toggle.
-    if (spec.group === "stats" && state.hideStatColumns) {
-      if (spec.key !== "quality") continue;
-      cols.push({
-        key: "statsToggle",
-        width: 102,
-        numeric: false,
-        toggle: () => columnGroupToggleHtml("quality"),
-        header: () => "",
-        filter: () => "",
-        body: () => ""
-      });
-      continue;
-    }
+    if (spec.group === "stats" && state.hideStatColumns) continue;
 
     const numeric = STAT_FIELDS.has(spec.key) || spec.narrow;
     cols.push({
@@ -5446,12 +5651,23 @@ function inventoryColumns(ctx) {
       numeric,
       cls: [numeric ? "col-num" : "", spec.narrow ? "col-narrow" : ""].filter(Boolean).join(" "),
       sort: spec.key,
-      toggle: () => columnGroupToggleHtml(spec.key),
-      header: () => spec.key === "name"
-        ? `${esc(spec.label)}${uidToggleHtml()}`
-        : esc(spec.label),
+      header: () => {
+        if (spec.key === "name") return `${esc(spec.label)}${uidToggleHtml()}`;
+        if (spec.stack) {
+          return `<span class="stack-line">${esc(spec.label)}</span>` +
+            `<span class="stack-line stack-second">${esc(spec.stackLabel)}</span>`;
+        }
+        return esc(spec.label);
+      },
       filter: () => {
         if (spec.filter === null) return "";
+        if (spec.stack) {
+          return [spec.key, spec.stack].map((field, i) =>
+            `<input class="stack-line${i ? " stack-second" : ""}" ` +
+            `data-th-filter="${field}" ` +
+            `aria-label="Filter by ${escInput(i ? spec.stackLabel : spec.label)}" ` +
+            `value="${escInput(state.transactionFilters[field] || "")}">`).join("");
+        }
         if (spec.filter === "owner") {
           return `<select data-th-filter="owner" aria-label="Filter by owner">` +
             ownerFilterOptionsHtml(ctx.ownerValues, state.transactionFilters.owner || "") +
@@ -5465,21 +5681,24 @@ function inventoryColumns(ctx) {
         return `<input data-th-filter="${spec.key}" aria-label="Filter by ${escInput(spec.label)}" ` +
           `value="${escInput(state.transactionFilters[spec.key] || "")}">`;
       },
-      body: (r) => inventoryFixedCell(spec.key, r)
+      body: (r) => {
+        if (!spec.stack) return inventoryFixedCell(spec.key, r);
+        const first = inventoryFixedCell(spec.key, r);
+        // No second bonus, no second line: the row keeps its usual height.
+        if (!hasSecondBonus(r)) return `<span class="stack-line">${first}</span>`;
+        return `<span class="stack-line">${first}</span>` +
+          `<span class="stack-line stack-second">${inventoryFixedCell(spec.stack, r)}</span>`;
+      }
     });
   }
 
-  for (let g = 0; g < ctx.groupCount; g++) {
-    const bandLabel = g === 0
-      ? "Acquired"
-      : (g === ctx.groupCount - 1 ? "Last Transaction" : "");
+  for (let g = 0; g < HISTORY_GROUP_COUNT; g++) {
+    const bandLabel = g === 0 ? "Acquired" : "Outcome";
 
     HISTORY_SUB_SPEC.forEach((sub, k) => {
-      const sortField = historySortField(g, sub.prop, ctx.groupCount);
+      const sortField = historySortField(g, sub.prop);
       const filterField = `log${g}.${sub.prop}`;
-      const slot = sub.prop === "type"
-        ? (g === 0 ? "firstLog" : (g === ctx.groupCount - 1 ? "lastLog" : null))
-        : null;
+      const slot = sub.prop === "type" ? (g === 0 ? "firstLog" : "outcome") : null;
 
       cols.push({
         key: `g${g}.${sub.prop}`,
@@ -5507,22 +5726,24 @@ function inventoryColumns(ctx) {
 // Group 0's Date keeps firstLogTimestamp so the default sort stays attached to
 // a visible header; the Transaction columns at either end address the history
 // itself rather than a slot.
-function historySortField(g, prop, groupCount) {
+function historySortField(g, prop) {
   if (g === 0 && prop === "timestamp") return "firstLogTimestamp";
-  if (prop === "type" && g === 0) return "firstLog.type";
-  if (prop === "type" && g === groupCount - 1) return "lastLog.type";
+  if (prop === "type") return g === 0 ? "firstLog.type" : "outcome.type";
   return `log${g}.${prop}`;
+}
+
+function hasSecondBonus(r) {
+  return r?.bonus2 !== null && r?.bonus2 !== undefined && r?.bonus2 !== "";
 }
 
 function inventoryFixedCell(key, r) {
   switch (key) {
     case "name": {
-      const marked = isMarkedReturned(r.uid);
-      const returnButton = canMarkReturned(r)
-        ? `<button type="button" class="inline-action${marked ? " is-active" : ""}"
-            data-mark-returned="${esc(r.uid)}" data-returned="${marked ? "1" : "0"}"
-            title="${marked ? "Unmark as returned" : "Mark this loan as returned"}"
-            >${marked ? "Returned ✓" : "Returned?"}</button>`
+      const returnButton = r.unresolved
+        ? `<button type="button" class="inline-action is-unresolved"
+            data-item-history="${esc(r.uid)}" data-holding="${esc(r.holdingKey)}"
+            title="Something about this holding is undecided - open its history to settle it"
+            >Unresolved</button>`
         : "";
 
       const live = findLiveMarketRow(r.uid);
@@ -5536,10 +5757,12 @@ function inventoryFixedCell(key, r) {
           ? `<button type="button" class="add-market" data-market-drop="${esc(manual.rowKey)}" title="Remove from Currently Selling">&minus; Market</button>`
           : `<button type="button" class="add-market" data-market-add="${esc(r.uid)}" title="Add to Currently Selling">+ Market</button>`;
 
-      return `${esc(r.name)}${addButton}${returnButton}${uidLineHtml(r.uid)}`;
+      return `<button type="button" class="item-history-link" data-item-history="${esc(r.uid)}"
+          title="Every transaction this weapon has been through"
+          >${esc(r.name)}</button>${addButton}${returnButton}${uidLineHtml(r.uid)}`;
     }
     case "owner":
-      return ownerCellHtml(r.uid, { id: r.ownerId, name: r.owner });
+      return ownerCellHtml(r, { id: r.ownerId, name: r.owner });
     case "rarity":
       return `<span class="${rarityClass(r.rarity).trim()}">${esc(formatRarity(r.rarity))}</span>`;
     case "profit": {
@@ -5633,14 +5856,14 @@ function historyCell(r, g, sub, ctx) {
 }
 
 // Consecutive columns sharing a band collapse into one spanning cell.
-function bandedRow(cols, rowCls, cellFor) {
+function bandedRow(cols, rowCls, cellFor, keyOf = (col) => col.band) {
   const out = [];
   let i = 0;
   while (i < cols.length) {
-    const band = cols[i].band;
-    if (band === undefined) { out.push(cellFor(cols[i], 1)); i += 1; continue; }
+    const key = keyOf(cols[i]);
+    if (key === undefined) { out.push(cellFor(cols[i], 1)); i += 1; continue; }
     let j = i;
-    while (j < cols.length && cols[j].band === band) j += 1;
+    while (j < cols.length && keyOf(cols[j]) === key) j += 1;
     out.push(cellFor(cols[i], j - i));
     i = j;
   }
@@ -5655,20 +5878,13 @@ function renderUniqueItemsTable() {
 
   const logsByUid = new Map(allRows.map(r => [String(r.uid), visibleItemLogs(r)]));
 
-  // Taken from the unfiltered set, and never fewer than the two ends, so
-  // filtering everything out cannot take the filter controls away with it.
-  const groupCount = Math.max(
-    2,
-    allRows.reduce((m, r) => Math.max(m, visibleItemLogs(r).length), 0)
-  );
-
   const ctx = {
-    groupCount,
+    groupCount: HISTORY_GROUP_COUNT,
     logsByUid,
     ownerValues: new Set(allRows.map(r => r.owner).filter(Boolean)),
     facetRows: {
       firstLog: getFilteredTransactionRows(allRows, { skip: "firstLog" }),
-      lastLog: getFilteredTransactionRows(allRows, { skip: "lastLog" })
+      outcome: getFilteredTransactionRows(allRows, { skip: "outcome" })
     }
   };
 
@@ -5677,10 +5893,6 @@ function renderUniqueItemsTable() {
 
   const colgroup = `<colgroup>${cols.map(c =>
     `<col style="width:${c.width}px">`).join("")}</colgroup>`;
-
-  const toggleStrip = bandedRow(cols, "col-toggle-row", (col, span) =>
-    `<th${span > 1 ? ` colspan="${span}"` : ""} class="col-toggle-cell ${col.cls || ""}">` +
-    `${span > 1 ? "" : (col.toggle ? col.toggle() : "")}</th>`);
 
   const bandRow = bandedRow(cols, "band-row", (col, span) =>
     span > 1
@@ -5712,18 +5924,21 @@ function renderUniqueItemsTable() {
   table.innerHTML =
     `<caption class="sr-only">Weapons and armour, with the transactions each one passed through</caption>` +
     colgroup +
-    `<thead>${toggleStrip}${bandRow}${headerRow}${filterRow}</thead>` +
+    `<thead>${bandRow}${headerRow}${filterRow}</thead>` +
     `<tbody>${body}</tbody>`;
 
   bindTransactionHistoryControls();
   bindOwnerControls();
   bindEditablePrices(table);
-  bindColumnGroupToggles(table);
   bindLogTypeFilters(table);
   bindUidControls(table);
 
   table.querySelectorAll("[data-trade-row]").forEach(btn => {
     btn.addEventListener("click", () => openTradeModal(btn.dataset.tradeRow));
+  });
+
+  table.querySelectorAll("[data-item-history]").forEach(btn => {
+    btn.addEventListener("click", () => openItemModal(btn.dataset.itemHistory));
   });
 
   table.querySelectorAll("[data-market-add]").forEach(btn => {
@@ -5741,13 +5956,6 @@ function renderUniqueItemsTable() {
   table.querySelectorAll("[data-market-drop]").forEach(btn => {
     btn.addEventListener("click", () => {
       removeManualMarketRow(btn.dataset.marketDrop);
-      render();
-    });
-  });
-
-  table.querySelectorAll("[data-mark-returned]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      setMarkedReturned(btn.dataset.markReturned, btn.dataset.returned !== "1");
       render();
     });
   });
@@ -6463,10 +6671,6 @@ function columnClass(field) {
   if (STAT_FIELDS.has(field)) parts.push("col-stat", "col-num");
   if (BONUS_FIELDS.has(field)) parts.push("col-bonus");
   if (NARROW_FIELDS.has(field)) parts.push("col-narrow");
-  // The column carrying a group's toggle is marked in every row. Collapsing a
-  // group narrows that one column rather than removing it, so each row keeps
-  // the same number of cells and the header stays aligned.
-  if (COLUMN_GROUP_HEADS[field]) parts.push("col-group-anchor");
   return parts.join(" ");
 }
 function columnAttr(field) {
@@ -6479,41 +6683,6 @@ function columnAttr(field) {
 // The toggle for a collapsible group lives in the header of the first column it
 // folds away, and that header stays put when collapsed so there is always
 // something to click to bring the group back.
-const COLUMN_GROUP_HEADS = {
-  quality: {
-    flag: "hideStatColumns",
-    storageKey: "tornHideStatColumns",
-    labelOn: "show stats",
-    labelOff: "hide stats",
-    title: "Hide Quality, Armor, DMG and ACC"
-  }
-};
-
-function columnGroupToggleHtml(field) {
-  const head = COLUMN_GROUP_HEADS[field];
-  if (!head) return "";
-  return `<label class="col-group-toggle-label" title="${escInput(head.title)}">` +
-    `<input type="checkbox" class="col-group-toggle" data-col-group="${field}" ` +
-    `${state[head.flag] ? "checked" : ""} aria-label="${escInput(head.title)}">` +
-    `<span class="col-group-toggle-text">` +
-    `${esc(state[head.flag] ? head.labelOn : head.labelOff)}</span></label>`;
-}
-
-function bindColumnGroupToggles(root) {
-  root.querySelectorAll("[data-col-group]").forEach(box => {
-    // The header itself sorts, so the checkbox must not pass its click up.
-    box.addEventListener("click", e => e.stopPropagation());
-    box.addEventListener("change", () => {
-      const head = COLUMN_GROUP_HEADS[box.dataset.colGroup];
-      if (!head) return;
-      state[head.flag] = box.checked;
-      localStorage.setItem(head.storageKey, box.checked ? "1" : "0");
-      // The column list itself changes, so the table is rebuilt.
-      render();
-    });
-  });
-}
-
 // The unique id is rarely wanted but occasionally essential, so it hides under
 // the item name and can be switched on from the Item heading of any table.
 function uidToggleHtml() {
@@ -6604,10 +6773,11 @@ function receiptSideHtml(side) {
   </div>`;
 }
 
+// Escape steps back one modal rather than dropping the lot: coming out of a
+// trade receipt should land on the history it was opened from.
 function closeTradeModal() {
-  const modal = document.getElementById("modal");
-  modal.hidden = true;
-  modal.innerHTML = "";
+  if (state.modalStack.length > 1) backModal();
+  else closeModal();
 }
 
 // Every weapon row of one trade that has a Bunker Buck share worked out.
@@ -6652,13 +6822,103 @@ function bbSplitPanelHtml(row) {
     </div>`;
 }
 
-function openTradeModal(rowKey) {
+// ---------------------------------------------------------------------------
+// Modals.
+//
+// One modal can lead to another - a weapon's history leads to the receipt of a
+// trade in it - and coming back has to land where you came from, so what is
+// open is a stack rather than a single panel. Each entry says only what it is
+// and what it is about; the content is derived when it is drawn, so an edit
+// made inside a modal shows up in it immediately.
+// ---------------------------------------------------------------------------
+function openModal(entry) {
+  state.modalStack.push(entry);
+  renderModal();
+}
+
+function backModal() {
+  state.modalStack.pop();
+  renderModal();
+}
+
+function closeModal() {
+  state.modalStack.length = 0;
+  renderModal();
+}
+
+function modalHtml(entry, canGoBack) {
+  if (entry?.kind === "item") return itemHistoryModalHtml(entry.uid, canGoBack);
+  if (entry?.kind === "trade") return tradeModalHtml(entry.rowKey, canGoBack);
+  return null;
+}
+
+function renderModal() {
+  const modal = document.getElementById("modal");
+  const top = state.modalStack[state.modalStack.length - 1];
+
+  if (!top) {
+    modal.hidden = true;
+    modal.innerHTML = "";
+    return;
+  }
+
+  const html = modalHtml(top, state.modalStack.length > 1);
+  // Whatever it was about has gone - a weapon filtered away, a row rebuilt.
+  if (!html) {
+    state.modalStack.pop();
+    renderModal();
+    return;
+  }
+
+  modal.innerHTML = html;
+  modal.hidden = false;
+
+  modal.querySelector("[data-modal-close]")?.addEventListener("click", closeModal);
+  modal.querySelector("[data-modal-back]")?.addEventListener("click", backModal);
+  modal.querySelector("[data-bb-split]")?.addEventListener("click", e => {
+    const btn = e.currentTarget;
+    applyBbSplit(btn.dataset.bbSplit, btn.dataset.bbRow, btn.dataset.bbUndo === "1");
+  });
+  modal.querySelectorAll("[data-trade-row]").forEach(btn => {
+    btn.addEventListener("click", () => openModal({ kind: "trade", rowKey: btn.dataset.tradeRow }));
+  });
+  modal.querySelectorAll("[data-holding-end]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setHoldingOutcome(btn.dataset.holdingKey, btn.dataset.holdingEnd || null);
+      render();
+    });
+  });
+  modal.querySelectorAll("[data-holding-open]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.holdingOpen;
+      setHoldingOutcome(key, state.holdingOutcome.get(key) === "open" ? null : "open");
+      render();
+    });
+  });
+  bindOwnerControls();
+  // The same prices as the table, edited the same way.
+  bindEditablePrices(modal);
+}
+
+function modalHeadHtml({ title, sub, label, canGoBack }) {
+  return `<div class="modal-head">
+      <div>
+        ${canGoBack
+          ? `<button type="button" class="modal-back" data-modal-back>&larr; Back</button>`
+          : ""}
+        <div class="modal-title">${title}</div>
+        ${sub ? `<div class="modal-sub">${sub}</div>` : ""}
+      </div>
+      <button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button>
+    </div>`;
+}
+
+function tradeModalHtml(rowKey, canGoBack) {
   // The per-log tabs are gone, so the row could belong to any of them.
   const row = findRowByKey(rowKey);
   const receipt = row?.receipt;
-  if (!receipt) return;
+  if (!receipt) return null;
 
-  const modal = document.getElementById("modal");
   const subParts = [formatDate(receipt.timestamp)];
   if (receipt.description) subParts.push(`"${receipt.description}"`);
 
@@ -6668,32 +6928,114 @@ function openTradeModal(rowKey) {
          href="https://www.torn.com/trade.php#step=logview&ID=${encodeURIComponent(receipt.tradeId)}"
          >[view]</a>`;
 
-  modal.innerHTML = `
+  return `
     <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Trade ${esc(receipt.tradeId)}">
-      <div class="modal-head">
-        <div>
-          <div class="modal-title">Trade #${esc(receipt.tradeId)}${viewLink}</div>
-          <div class="modal-sub">${esc(subParts.join(" \u00b7 "))}</div>
-        </div>
-        <button type="button" class="modal-close" id="modalClose" aria-label="Close">&times;</button>
-      </div>
+      ${modalHeadHtml({
+        title: `Trade #${esc(receipt.tradeId)}${viewLink}`,
+        sub: esc(subParts.join(" \u00b7 ")),
+        canGoBack
+      })}
       <div class="receipt-sides">
         ${receipt.sides.map(receiptSideHtml).join("")}
       </div>
       ${bbSplitPanelHtml(row)}
     </div>`;
-  modal.hidden = false;
+}
 
-  document.getElementById("modalClose").addEventListener("click", closeTradeModal);
-  modal.querySelector("[data-bb-split]")?.addEventListener("click", e => {
-    const btn = e.currentTarget;
-    applyBbSplit(btn.dataset.bbSplit, btn.dataset.bbRow, btn.dataset.bbUndo === "1");
-  });
+// Kept so a weapon's history is one click from its name, wherever it is shown.
+function openTradeModal(rowKey) {
+  openModal({ kind: "trade", rowKey });
+}
+
+function openItemModal(uid) {
+  openModal({ kind: "item", uid: String(uid) });
+}
+
+// Every transaction a weapon has been through, in the order they happened.
+// The table shows only the two ends; this is the whole of it, with the same
+// cells - a price is edited here exactly as it is there, and the trade behind
+// a row opens on top of this one.
+function holdingSectionHtml(holding, index, total) {
+  const logs = holding.logs || [];
+  const ctx = { logsByUid: new Map([[String(holding.uid), logs]]) };
+  const outcome = outcomeLogEntry(holding);
+
+  const rows = logs.map((entry, i) => {
+    const cells = HISTORY_SUB_SPEC.map(sub =>
+      `<td class="${sub.party ? "history-party" : ""}">${historyCell(holding, i, sub, ctx)}</td>`
+    ).join("");
+
+    // Any transaction that took the weapon out can be the one that ended the
+    // holding. Saying so splits whatever follows into the next holding.
+    const ends = OUTGOING_SOURCES.has(entry.sourceKey)
+      ? (holding.decision === entry.rowKey
+        ? `<button type="button" class="holding-mark is-active" data-holding-end=""
+             data-holding-key="${esc(holding.holdingKey)}"
+             title="Stop treating this as the end of the holding">Ends here ✓</button>`
+        : `<button type="button" class="holding-mark" data-holding-end="${esc(entry.rowKey)}"
+             data-holding-key="${esc(holding.holdingKey)}"
+             title="This transaction ended the holding; anything after it starts a new one"
+             >Ends here</button>`)
+      : "";
+
+    return `<tr class="${i === 0 ? "first-acquisition" : ""}${
+      outcome && outcome.rowKey === entry.rowKey ? " is-outcome" : ""}">` +
+      `${cells}<td class="holding-mark-cell">${ends}</td></tr>`;
+  }).join("");
+
+  const decided = holding.decision === "open"
+    ? "still open"
+    : (holding.decision ? "ended by hand" : "not decided");
+
+  return `
+    <section class="holding-section${holding.unresolved ? " is-unresolved" : ""}">
+      <div class="holding-head">
+        <span class="holding-title">${total > 1 ? `Holding ${index + 1} of ${total}` : "History"}
+          <span class="holding-note">${esc(decided)}${
+            holding.unresolved ? " \u00b7 unresolved" : ""}</span></span>
+        <span class="holding-controls">
+          <label class="holding-owner">Owner
+            ${ownerCellHtml(holding, { id: holding.ownerId, name: holding.owner })}</label>
+          <button type="button" class="holding-mark${holding.decision === "open" ? " is-active" : ""}"
+            data-holding-open="${esc(holding.holdingKey)}"
+            title="Nothing has ended this holding yet - it is still held or still out"
+            >Still open${holding.decision === "open" ? " ✓" : ""}</button>
+        </span>
+      </div>
+      <table class="item-history-table">
+        <thead><tr>${HISTORY_SUB_SPEC.map(sub =>
+          `<th scope="col">${esc(sub.label)}</th>`).join("")}<th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>`;
+}
+
+function itemHistoryModalHtml(uid, canGoBack) {
+  const holdings = buildUniqueItemsRows().filter(r => String(r.uid) === String(uid));
+  if (!holdings.length) return null;
+
+  const first = holdings[0];
+  const subParts = [formatRarity(first.rarity)];
+  if (holdings.length > 1) subParts.push(`${holdings.length} holdings`);
+  else subParts.push(first.stateLabel);
+
+  return `
+    <div class="modal-panel modal-wide" role="dialog" aria-modal="true"
+      aria-label="History of ${escInput(first.name)}">
+      ${modalHeadHtml({
+        title: `${esc(first.name)}${uidLineHtml(first.uid)}`,
+        sub: esc(subParts.filter(Boolean).join(" \u00b7 ")),
+        canGoBack
+      })}
+      <div class="item-history">
+        ${holdings.map((h, i) => holdingSectionHtml(h, i, holdings.length)).join("")}
+      </div>
+    </div>`;
 }
 
 document.getElementById("modal").addEventListener("click", e => {
   // Backdrop only; clicks inside the panel must not dismiss it.
-  if (e.target.id === "modal") closeTradeModal();
+  if (e.target.id === "modal") closeModal();
 });
 // A click anywhere outside an open filter menu dismisses it. The target is
 // matched with closest() rather than contains(), so a click on a checkbox that
@@ -6718,17 +7060,14 @@ document.addEventListener("keydown", e => {
 
 function render() {
   invalidateOwnerDefaults();
+  applyStatedFacts();
+  renderModal();
   renderTabs();
   renderTableActions();
   renderMarketExportPanel();
 
   if (state.active === MARKET_TAB.key) {
     renderItemMarketTable();
-    return;
-  }
-
-  if (state.active === SETTLE_TAB.key) {
-    renderSettleTables();
     return;
   }
 
@@ -7376,12 +7715,8 @@ async function renderSavedDataPanel() {
     return;
   }
 
-  if (!records.length) {
-    panel.innerHTML = "<div>Nothing is saved yet.</div>";
-    return;
-  }
-
-  panel.innerHTML = records.map(record => {
+  panel.innerHTML = (records.length
+    ? records.map(record => {
     const id = String(record.ownerId);
     const weapons = new Set();
     for (const spec of LOGS) {
@@ -7412,10 +7747,22 @@ async function renderSavedDataPanel() {
           >Forget</button>
       </span>
     </div>`;
-  }).join("") +
+      }).join("")
+    : `<div class="saved-owner"><span class="saved-owner-detail">` +
+      `No account has been loaded in this browser yet.</span></div>`) +
     `<div class="saved-data-import">
       <button type="button" class="owner-action" id="importOwnerBtn"
         title="Load an account from a file exported here">Import from file</button>
+    </div>` +
+    `<div class="saved-data-stated">
+      <span>
+        <span class="saved-owner-name">My decisions</span>
+        <span class="saved-owner-detail">${esc(statedFactSummary() ||
+          "nothing set by hand yet")} · not kept per account</span>
+      </span>
+      <button type="button" class="forget-owner" id="resetStatedBtn"
+        title="Clear the owners, prices, loans and returns you have set by hand"
+        >Reset my decisions</button>
     </div>`;
 
   panel.querySelectorAll("[data-export-owner]").forEach(btn => {
@@ -7447,6 +7794,24 @@ async function renderSavedDataPanel() {
       await renderSavedDataPanel();
       render();
     });
+  });
+
+  document.getElementById("resetStatedBtn")?.addEventListener("click", async () => {
+    const counts = statedFactCounts();
+    if (!counts.total) {
+      status("Nothing has been set by hand yet.");
+      return;
+    }
+    if (!window.confirm(
+      `Clear everything you have set by hand?\n\n${statedFactSummary()}.\n\n` +
+      "The transactions themselves are untouched - only your decisions about " +
+      "them go, and they cannot be fetched back from Torn."
+    )) return;
+
+    resetStatedFacts();
+    status(`Cleared ${counts.total} decision${counts.total === 1 ? "" : "s"}.`);
+    await renderSavedDataPanel();
+    render();
   });
 
   const importBtn = document.getElementById("importOwnerBtn");
@@ -7528,6 +7893,7 @@ render();
 state.startupRebuild = (async () => {
   try {
     const rebuilt = await rebuildAllFromSaved({ quiet: true });
+    migrateUidDecisions();
     if (rebuilt) {
       status(`Rebuilt ${rebuilt} owner${rebuilt === 1 ? "" : "s"} from saved data. ` +
         `Press Load data to pull anything new.`);
